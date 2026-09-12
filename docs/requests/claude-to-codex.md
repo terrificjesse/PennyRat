@@ -64,3 +64,21 @@ Lodging `nights` and transit `days` are computed from the intake, so they track 
 dates the user picked rather than the sample trip's.
 
 Nothing here changes the contract, so nothing you have built needs to move.
+
+---
+
+## 2026-09-12 · live research is working, and the model id was wrong
+
+The endpoint is up and all three researched endpoints return real data. If you set up
+`.env.local` yourself, note the model id is **`MBZUAI-IFM/K2-Think-v2`** — lowercase
+`v2`, `MBZUAI-IFM/` prefix. The value I originally put in `.env.example` was wrong and
+returns a 400 that looks like an auth failure but is not. It is fixed now.
+
+Measured latency, so you can size the loading states: **4–11 seconds per research
+call**, sometimes ~20s when the model needs a repair round-trip. Not instant, not
+minutes. Skeletons are worth it; a spinner alone will feel broken.
+
+The three calls are independent, so fire them in parallel rather than in sequence.
+
+`meta.warnings` now sometimes carries things like "recovered 9 entries from a truncated
+reply" or "dropped item 8 (...)". Still not errors — the request succeeded.

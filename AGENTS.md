@@ -130,21 +130,38 @@ a discriminated union. Tests in `src/fixtures/fixtures.test.ts` hold the line.
 Environment (see `.env.example`):
 
 ```
-IFM_API_KEY=      IFM_BASE_URL=https://api.k2think.ai/v1      IFM_MODEL=IFM/K2-Think-V2
+IFM_API_KEY=      IFM_BASE_URL=https://api.k2think.ai/v1      IFM_MODEL=MBZUAI-IFM/K2-Think-v2
 K2_MODE=fixture | cache | live
 ```
 
 What the model is, and what it is not:
 
-- OpenAI-compatible `POST {IFM_BASE_URL}/chat/completions`, bearer auth.
-- **No documented JSON mode, no `response_format`, no tool calling.** Do not send them and
-  do not depend on them. `npm run probe:k2` reports what the live endpoint actually honors;
-  believe the probe over any doc, including this one.
-- It is a reasoning model: `temperature: 1.0`, `top_p: 1.0`, `reasoning_effort: 'high'`.
-  Those are the evaluated settings — do not tune them for taste.
-- It emits reasoning traces. Strip `<think>…</think>`, `<thinking>…</thinking>`, and any
-  `reasoning_content` field **before** parsing.
-- It is slow and it burns output tokens. 120s timeout, 2 retries with jitter on 429 and 5xx.
+Measured against the real endpoint on 12 Sep 2026 with `npm run probe:k2`. These are
+observations, not guesses — re-run the probe if anything here stops matching.
+
+- OpenAI-compatible `POST {IFM_BASE_URL}/chat/completions`, bearer auth. `GET /models`
+  works and lists exactly one model.
+- **The served model id is `MBZUAI-IFM/K2-Think-v2`** — note the `MBZUAI-IFM/` prefix and
+  the lowercase `v2`. It matches neither HuggingFace repo name (`IFM/K2-Think-V2`,
+  `LLM360/K2-Think-V2`). A wrong id returns `400 token model is not configured for token
+  management`, which reads like an auth problem and is not one.
+- `response_format: json_object` is **accepted but not honored** — the body still needs
+  extraction. Tool calling is still undocumented. `parse.ts` is not optional.
+- `temperature: 1.0`, `top_p: 1.0` are the evaluated settings. Leave them.
+- **`reasoning_effort` is `medium`, deliberately.** These prompts recall and list; they do
+  not solve. Listing 12 hotels cost 4,547 reasoning tokens at `high`, 841 at `medium`, 22
+  at `low`. At `high` with an 8k ceiling the trace consumed the entire budget and the
+  answer came back empty. `low` is cheaper still but drops commas and nests objects where
+  it should write properties. `medium` is the setting that holds.
+- **Reasoning is returned in `message.reasoning`, not in `content`** and not as `<think>`
+  tags. We read `content` only. The tag-stripping in `parse.ts` stays as insurance for a
+  deployment that behaves differently.
+- Budget 16k output tokens. An empty answer next to a long `reasoning` means the trace ate
+  the budget; the client doubles it and retries once.
+- It is fast: 4–11s per research call, not the minute-plus a 70B reasoner suggests.
+- Expect roughly one reply in five to need the repair round-trip. That is model variance,
+  not a prompt bug — a first reply that forces a repair is written to
+  `.k2cache/failures/` so it can be read rather than guessed at.
 
 Every response goes through `lib/k2/parse.ts`: strip traces → take the last balanced JSON
 object or fenced block → Zod parse → drop individual invalid items rather than failing the
@@ -288,8 +305,14 @@ Three waves, two lanes, one human commit between each.
 
 ## 15. Troubleshooting
 
-**K2 call times out.** Expected on cold `reasoning_effort: high`. Confirm with
-`npm run probe:k2`. Do not lower the effort to make it faster; cache instead.
+**K2 call times out.** Unexpected — calls run 4–11s. Confirm with `npm run probe:k2`.
+
+**`400 token model is not configured for token management`.** The model id is wrong, not
+the key. It must be `MBZUAI-IFM/K2-Think-v2`; `GET /models` lists what is served.
+
+**An empty answer with a long `reasoning`.** The trace used the whole token budget. The
+client doubles `max_tokens` and retries; if it recurs, the prompt is asking for too much
+in one call.
 
 **Model returned prose, not JSON.** Normal. `parse.ts` handles it. If the repair round-trip
 also fails, log the raw text to `.k2cache/failures/` and fall back to fixtures — never throw

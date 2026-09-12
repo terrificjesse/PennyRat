@@ -16,7 +16,7 @@ const TIMEOUT_MS = 180_000;
 
 const apiKey = (process.env.IFM_API_KEY ?? '').trim();
 const baseUrl = (process.env.IFM_BASE_URL ?? '').trim().replace(/\/+$/, '');
-const model = (process.env.IFM_MODEL ?? 'IFM/K2-Think-V2').trim();
+const model = (process.env.IFM_MODEL ?? 'MBZUAI-IFM/K2-Think-v2').trim();
 
 type Attempt = {
   ok: boolean;
