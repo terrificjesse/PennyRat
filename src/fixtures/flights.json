@@ -1,0 +1,351 @@
+[
+  {
+    "id": "flt_out_ua_direct",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "United 881 \u00b7 nonstop to Narita",
+    "costCents": 198000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "outbound",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "NRT",
+        "departLocal": "2026-10-12T11:35",
+        "arriveLocal": "2026-10-13T14:40",
+        "carrier": "United Airlines",
+        "flightNo": "UA881",
+        "durationMinutes": 785
+      }
+    ],
+    "stops": 0,
+    "totalDurationMinutes": 785,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_out_nh_direct",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "ANA 112 \u00b7 nonstop to Haneda",
+    "costCents": 214000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "outbound",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "HND",
+        "departLocal": "2026-10-12T12:20",
+        "arriveLocal": "2026-10-13T15:15",
+        "carrier": "ANA",
+        "flightNo": "NH112",
+        "durationMinutes": 775
+      }
+    ],
+    "stops": 0,
+    "totalDurationMinutes": 775,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_out_ac_yvr",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "Air Canada via Vancouver",
+    "costCents": 154000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "outbound",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "YVR",
+        "departLocal": "2026-10-12T08:10",
+        "arriveLocal": "2026-10-12T10:45",
+        "carrier": "Air Canada",
+        "flightNo": "AC554",
+        "durationMinutes": 275
+      },
+      {
+        "from": "YVR",
+        "to": "NRT",
+        "departLocal": "2026-10-12T14:25",
+        "arriveLocal": "2026-10-13T16:30",
+        "carrier": "Air Canada",
+        "flightNo": "AC3",
+        "durationMinutes": 605
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 975,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_out_ke_icn",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "Korean Air via Seoul",
+    "costCents": 148400,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "outbound",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "ICN",
+        "departLocal": "2026-10-12T13:00",
+        "arriveLocal": "2026-10-13T16:55",
+        "carrier": "Korean Air",
+        "flightNo": "KE038",
+        "durationMinutes": 835
+      },
+      {
+        "from": "ICN",
+        "to": "NRT",
+        "departLocal": "2026-10-13T19:05",
+        "arriveLocal": "2026-10-13T21:20",
+        "carrier": "Korean Air",
+        "flightNo": "KE703",
+        "durationMinutes": 135
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1100,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_out_ci_tpe",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "China Airlines via Taipei",
+    "costCents": 129600,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "low",
+    "direction": "outbound",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "TPE",
+        "departLocal": "2026-10-12T00:50",
+        "arriveLocal": "2026-10-13T05:05",
+        "carrier": "China Airlines",
+        "flightNo": "CI05",
+        "durationMinutes": 915
+      },
+      {
+        "from": "TPE",
+        "to": "NRT",
+        "departLocal": "2026-10-13T08:40",
+        "arriveLocal": "2026-10-13T12:45",
+        "carrier": "China Airlines",
+        "flightNo": "CI108",
+        "durationMinutes": 185
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1315,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_out_mu_pvg",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "China Eastern via Shanghai",
+    "costCents": 118000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "low",
+    "direction": "outbound",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "PVG",
+        "departLocal": "2026-10-12T02:05",
+        "arriveLocal": "2026-10-13T06:05",
+        "carrier": "China Eastern",
+        "flightNo": "MU298",
+        "durationMinutes": 900
+      },
+      {
+        "from": "PVG",
+        "to": "NRT",
+        "departLocal": "2026-10-13T09:55",
+        "arriveLocal": "2026-10-13T13:50",
+        "carrier": "China Eastern",
+        "flightNo": "MU575",
+        "durationMinutes": 175
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1345,
+    "cabin": "economy",
+    "baggageIncluded": false
+  },
+  {
+    "id": "flt_ret_ua_direct",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "United 882 \u00b7 nonstop from Narita",
+    "costCents": 192000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "return",
+    "legs": [
+      {
+        "from": "NRT",
+        "to": "ORD",
+        "departLocal": "2026-10-17T15:45",
+        "arriveLocal": "2026-10-17T13:40",
+        "carrier": "United Airlines",
+        "flightNo": "UA882",
+        "durationMinutes": 715
+      }
+    ],
+    "stops": 0,
+    "totalDurationMinutes": 715,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_ret_nh_direct",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "ANA 111 \u00b7 nonstop from Haneda",
+    "costCents": 206000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "return",
+    "legs": [
+      {
+        "from": "HND",
+        "to": "ORD",
+        "departLocal": "2026-10-17T10:55",
+        "arriveLocal": "2026-10-17T08:40",
+        "carrier": "ANA",
+        "flightNo": "NH111",
+        "durationMinutes": 705
+      }
+    ],
+    "stops": 0,
+    "totalDurationMinutes": 705,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_ret_ke_icn",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "Korean Air via Seoul",
+    "costCents": 142000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "return",
+    "legs": [
+      {
+        "from": "NRT",
+        "to": "ICN",
+        "departLocal": "2026-10-17T09:30",
+        "arriveLocal": "2026-10-17T11:55",
+        "carrier": "Korean Air",
+        "flightNo": "KE704",
+        "durationMinutes": 145
+      },
+      {
+        "from": "ICN",
+        "to": "ORD",
+        "departLocal": "2026-10-17T14:20",
+        "arriveLocal": "2026-10-17T12:55",
+        "carrier": "Korean Air",
+        "flightNo": "KE037",
+        "durationMinutes": 755
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1045,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_ret_ci_tpe",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "China Airlines via Taipei",
+    "costCents": 124000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "low",
+    "direction": "return",
+    "legs": [
+      {
+        "from": "NRT",
+        "to": "TPE",
+        "departLocal": "2026-10-17T10:40",
+        "arriveLocal": "2026-10-17T13:10",
+        "carrier": "China Airlines",
+        "flightNo": "CI107",
+        "durationMinutes": 210
+      },
+      {
+        "from": "TPE",
+        "to": "ORD",
+        "departLocal": "2026-10-17T17:20",
+        "arriveLocal": "2026-10-17T18:50",
+        "carrier": "China Airlines",
+        "flightNo": "CI06",
+        "durationMinutes": 870
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1270,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_ret_mu_pvg",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "China Eastern via Shanghai",
+    "costCents": 115000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "low",
+    "direction": "return",
+    "legs": [
+      {
+        "from": "NRT",
+        "to": "PVG",
+        "departLocal": "2026-10-17T13:15",
+        "arriveLocal": "2026-10-17T15:25",
+        "carrier": "China Eastern",
+        "flightNo": "MU576",
+        "durationMinutes": 190
+      },
+      {
+        "from": "PVG",
+        "to": "ORD",
+        "departLocal": "2026-10-18T12:40",
+        "arriveLocal": "2026-10-18T13:10",
+        "carrier": "China Eastern",
+        "flightNo": "MU297",
+        "durationMinutes": 810
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 2105,
+    "cabin": "economy",
+    "baggageIncluded": false
+  }
+]

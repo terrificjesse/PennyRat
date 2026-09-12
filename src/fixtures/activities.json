@@ -1,0 +1,1154 @@
+[
+  {
+    "id": "act_teamlab_planets",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "teamLab Planets TOKYO",
+    "costCents": 5000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "experience",
+    "neighborhood": "Toyosu",
+    "description": "Barefoot digital art installation where you wade through knee-deep water and a room of mirrored orchids. Timed entry, and it sells out weeks ahead.",
+    "durationMinutes": 120,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": true,
+    "interests": [
+      "art",
+      "tourist"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.5,
+    "reviewCount": 41230,
+    "sensoryNotes": "Dark rooms, mirrors and loud ambient sound throughout. Overwhelming for noise-sensitive visitors."
+  },
+  {
+    "id": "act_tokyo_natl_museum",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Tokyo National Museum",
+    "costCents": 1300,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "museum",
+    "neighborhood": "Ueno",
+    "description": "The country’s oldest and largest museum: samurai armour, Buddhist sculpture and a quiet garden behind the main hall. Closed Mondays.",
+    "durationMinutes": 150,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "mon": null,
+      "tue": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "history",
+      "art",
+      "tourist",
+      "sensory_friendly"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.6,
+    "reviewCount": 18940,
+    "sensoryNotes": "Large, hushed galleries with benches and few crowds on weekday mornings."
+  },
+  {
+    "id": "act_sensoji",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Sensō-ji Temple and Nakamise-dōri",
+    "costCents": 0,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "attraction",
+    "neighborhood": "Asakusa",
+    "description": "Tokyo’s oldest temple, approached down a lantern-hung arcade of snack and souvenir stalls. Grounds are free and never close.",
+    "durationMinutes": 90,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "06:00",
+          "close": "17:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "tourist",
+      "history"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.5,
+    "reviewCount": 92180
+  },
+  {
+    "id": "act_shibuya_sky",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Shibuya Sky rooftop observatory",
+    "costCents": 3300,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "attraction",
+    "neighborhood": "Shibuya",
+    "description": "Open-air deck 230m above the world’s busiest crossing. Book the slot 45 minutes before sunset and you get the city twice, lit and unlit.",
+    "durationMinutes": 90,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "mon": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "tue": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "wed": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "thu": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "fri": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ],
+      "sat": [
+        {
+          "open": "10:00",
+          "close": "22:30"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": true,
+    "interests": [
+      "tourist"
+    ],
+    "bestTimeOfDay": "evening",
+    "rating": 4.5,
+    "reviewCount": 27600
+  },
+  {
+    "id": "act_tsukiji_market",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Tsukiji Outer Market food crawl",
+    "costCents": 3600,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Tsukiji",
+    "description": "Standing-room stalls for tamagoyaki, grilled scallops and tuna hand rolls. Trade closes early and Sundays and Wednesdays are mostly shut.",
+    "durationMinutes": 90,
+    "openingHours": {
+      "sun": null,
+      "mon": [
+        {
+          "open": "05:00",
+          "close": "14:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "05:00",
+          "close": "14:00"
+        }
+      ],
+      "wed": null,
+      "thu": [
+        {
+          "open": "05:00",
+          "close": "14:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "05:00",
+          "close": "14:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "05:00",
+          "close": "14:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food",
+      "tourist"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.4,
+    "reviewCount": 15320,
+    "sensoryNotes": "Tight, crowded lanes with strong smells and no seating."
+  },
+  {
+    "id": "act_ichiran",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Ichiran Shibuya ramen",
+    "costCents": 2200,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shibuya",
+    "description": "Tonkotsu ramen eaten in a solo booth with a bamboo screen. You order on a paper form and never speak to anyone.",
+    "durationMinutes": 45,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:00",
+          "close": "23:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food",
+      "sensory_friendly"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.2,
+    "reviewCount": 31400,
+    "sensoryNotes": "Individual booths, no eye contact required, minimal conversation. Easiest restaurant in the city if you need low stimulation."
+  },
+  {
+    "id": "act_sushi_omakase",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Sushi Kimura omakase lunch",
+    "costCents": 9000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Toyosu",
+    "description": "Twenty-course counter lunch from the day’s auction. The chef ages his tuna for weeks, which is the whole point. Reserve well ahead.",
+    "durationMinutes": 75,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "07:00",
+          "close": "14:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "07:00",
+          "close": "14:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "07:00",
+          "close": "14:00"
+        }
+      ],
+      "wed": null,
+      "thu": [
+        {
+          "open": "07:00",
+          "close": "14:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "07:00",
+          "close": "14:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "07:00",
+          "close": "14:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": true,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.8,
+    "reviewCount": 2140
+  },
+  {
+    "id": "act_meiji_jingu",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Meiji Jingū shrine and forest path",
+    "costCents": 0,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "attraction",
+    "neighborhood": "Harajuku",
+    "description": "A gravel avenue through 100,000 donated trees, ending at a working Shinto shrine. Opens at dawn and shuts at dusk.",
+    "durationMinutes": 75,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ],
+      "mon": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ],
+      "tue": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ],
+      "wed": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ],
+      "thu": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ],
+      "fri": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ],
+      "sat": [
+        {
+          "open": "05:00",
+          "close": "17:20"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "tourist",
+      "history",
+      "sensory_friendly"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.6,
+    "reviewCount": 55700,
+    "sensoryNotes": "Wide shaded paths, low noise, easy to leave at any point."
+  },
+  {
+    "id": "act_takao_hike",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Mount Takao trail 6 and cable car",
+    "costCents": 2800,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "outdoor",
+    "neighborhood": "Takao",
+    "description": "An hour west of the city, then a 90-minute climb beside a stream to a summit with Fuji on a clear day. Trail 6 is the shaded one.",
+    "durationMinutes": 300,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ],
+      "mon": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ],
+      "tue": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ],
+      "wed": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ],
+      "thu": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ],
+      "fri": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ],
+      "sat": [
+        {
+          "open": "08:00",
+          "close": "17:45"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "hiking",
+      "family"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.5,
+    "reviewCount": 12800
+  },
+  {
+    "id": "act_shinjuku_gyoen",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Shinjuku Gyoen National Garden",
+    "costCents": 660,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "outdoor",
+    "neighborhood": "Shinjuku",
+    "description": "Three gardens in one wall: English lawn, French rows and a Japanese pond circuit with a teahouse. Closed Mondays.",
+    "durationMinutes": 90,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "09:00",
+          "close": "17:30"
+        }
+      ],
+      "mon": null,
+      "tue": [
+        {
+          "open": "09:00",
+          "close": "17:30"
+        }
+      ],
+      "wed": [
+        {
+          "open": "09:00",
+          "close": "17:30"
+        }
+      ],
+      "thu": [
+        {
+          "open": "09:00",
+          "close": "17:30"
+        }
+      ],
+      "fri": [
+        {
+          "open": "09:00",
+          "close": "17:30"
+        }
+      ],
+      "sat": [
+        {
+          "open": "09:00",
+          "close": "17:30"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "family",
+      "tourist",
+      "sensory_friendly"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.6,
+    "reviewCount": 34100,
+    "sensoryNotes": "Quiet, flat, plenty of benches and shade. A good reset between busier stops."
+  },
+  {
+    "id": "act_ghibli_museum",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Ghibli Museum, Mitaka",
+    "costCents": 1300,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "museum",
+    "neighborhood": "Mitaka",
+    "description": "Hand-drawn cels, a rooftop robot and a short film you cannot see anywhere else. Tickets are date-stamped and sell out the month before.",
+    "durationMinutes": 120,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "tue": null,
+      "wed": [
+        {
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "10:00",
+          "close": "18:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": true,
+    "interests": [
+      "family",
+      "art"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.7,
+    "reviewCount": 22900
+  },
+  {
+    "id": "act_ueno_zoo",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Ueno Zoo",
+    "costCents": 800,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "attraction",
+    "neighborhood": "Ueno",
+    "description": "Japan’s oldest zoo, with giant pandas and a monorail across the two halves. Inside the same park as the national museum. Closed Mondays.",
+    "durationMinutes": 150,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "mon": null,
+      "tue": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "09:30",
+          "close": "17:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "family"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.1,
+    "reviewCount": 19800
+  },
+  {
+    "id": "act_akihabara",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Akihabara electronics and arcade crawl",
+    "costCents": 4000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "shopping",
+    "neighborhood": "Akihabara",
+    "description": "Eight floors of used camera gear, retro cartridges and rhythm-game cabinets. Budget is whatever you decide not to carry home.",
+    "durationMinutes": 120,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:00",
+          "close": "20:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "shopping",
+      "tourist"
+    ],
+    "bestTimeOfDay": "afternoon",
+    "rating": 4.3,
+    "reviewCount": 41000,
+    "sensoryNotes": "Extremely loud arcades and dense crowds after 17:00."
+  },
+  {
+    "id": "act_kusama_museum",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Yayoi Kusama Museum",
+    "costCents": 1460,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "museum",
+    "neighborhood": "Shinjuku",
+    "description": "Five small floors of the artist’s own collection, including one infinity room. Ninety-minute timed entry, Thursday to Sunday only.",
+    "durationMinutes": 60,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:00",
+          "close": "17:30"
+        }
+      ],
+      "mon": null,
+      "tue": null,
+      "wed": null,
+      "thu": [
+        {
+          "open": "11:00",
+          "close": "17:30"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:00",
+          "close": "17:30"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:00",
+          "close": "17:30"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": true,
+    "interests": [
+      "art",
+      "sensory_friendly"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.4,
+    "reviewCount": 3900,
+    "sensoryNotes": "Capped at a small number of visitors per slot, so it stays genuinely quiet."
+  },
+  {
+    "id": "act_skytree",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Tokyo Skytree Tembo Deck",
+    "costCents": 2800,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "attraction",
+    "neighborhood": "Oshiage",
+    "description": "The tallest tower in the world, with a glass floor section and a view that reaches Fuji in winter air.",
+    "durationMinutes": 90,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "10:00",
+          "close": "21:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "tourist",
+      "family"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.3,
+    "reviewCount": 48200
+  },
+  {
+    "id": "act_kappabashi",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Kappabashi kitchen tool street",
+    "costCents": 2500,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "shopping",
+    "neighborhood": "Asakusa",
+    "description": "Two blocks of restaurant supply shops selling hand-forged knives, lacquer bowls and the plastic food models from shop windows.",
+    "durationMinutes": 75,
+    "openingHours": {
+      "sun": null,
+      "mon": [
+        {
+          "open": "10:00",
+          "close": "17:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "10:00",
+          "close": "17:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "10:00",
+          "close": "17:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "10:00",
+          "close": "17:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "10:00",
+          "close": "17:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "10:00",
+          "close": "17:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "shopping",
+      "food"
+    ],
+    "bestTimeOfDay": "afternoon",
+    "rating": 4.4,
+    "reviewCount": 8600
+  },
+  {
+    "id": "act_nakameguro_izakaya",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Nakameguro canal izakaya dinner",
+    "costCents": 6400,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Nakameguro",
+    "description": "Small plates and highballs at a counter along the cherry-lined canal. Order the grilled mackerel and whatever is chalked on the board.",
+    "durationMinutes": 105,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "mon": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "tue": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "wed": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "thu": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "fri": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "sat": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food",
+      "nightlife"
+    ],
+    "bestTimeOfDay": "evening",
+    "rating": 4.5,
+    "reviewCount": 6700
+  },
+  {
+    "id": "act_sumo_museum",
+    "kind": "activity",
+    "bucket": "activities",
+    "title": "Sumō Museum at Ryōgoku Kokugikan",
+    "costCents": 0,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "museum",
+    "neighborhood": "Ryōgoku",
+    "description": "One room of championship banners, handprints and ceremonial aprons inside the national sumō stadium. Free, and weekdays only.",
+    "durationMinutes": 45,
+    "openingHours": {
+      "sun": null,
+      "mon": [
+        {
+          "open": "10:00",
+          "close": "16:30"
+        }
+      ],
+      "tue": [
+        {
+          "open": "10:00",
+          "close": "16:30"
+        }
+      ],
+      "wed": [
+        {
+          "open": "10:00",
+          "close": "16:30"
+        }
+      ],
+      "thu": [
+        {
+          "open": "10:00",
+          "close": "16:30"
+        }
+      ],
+      "fri": [
+        {
+          "open": "10:00",
+          "close": "16:30"
+        }
+      ],
+      "sat": null
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "sports",
+      "history",
+      "sensory_friendly"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.0,
+    "reviewCount": 1850,
+    "sensoryNotes": "Single quiet room, rarely more than a few people in it."
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tr_subway_pass",
+    "kind": "transit",
+    "bucket": "localTransit",
+    "title": "Tokyo Subway 72-hour ticket + IC card",
+    "costCents": 7000,
+    "costBasis": "per_day",
+    "estimated": true,
+    "confidence": "high",
+    "mode": "transit_pass",
+    "perDayCents": 1400,
+    "days": 5,
+    "description": "Unlimited Tokyo Metro and Toei subway for three days, plus a topped-up Suica for the JR lines the pass does not cover.",
+    "coverageNote": "Does not cover JR lines, including the Chuo line and the airport express."
+  },
+  {
+    "id": "tr_ic_payg",
+    "kind": "transit",
+    "bucket": "localTransit",
+    "title": "Suica pay-as-you-go + walking",
+    "costCents": 3000,
+    "costBasis": "per_day",
+    "estimated": true,
+    "confidence": "high",
+    "mode": "walk_bike",
+    "perDayCents": 600,
+    "days": 5,
+    "description": "Tap-in fares only, on the assumption you walk between anything under two kilometres apart. Cheapest option that still works.",
+    "coverageNote": "Assumes roughly 8km of walking a day."
+  },
+  {
+    "id": "tr_rideshare",
+    "kind": "transit",
+    "bucket": "localTransit",
+    "title": "GO taxi app for most trips",
+    "costCents": 22500,
+    "costBasis": "per_day",
+    "estimated": true,
+    "confidence": "medium",
+    "mode": "rideshare",
+    "perDayCents": 4500,
+    "days": 5,
+    "description": "Door to door for three or four trips a day. Worth it with luggage, small children, or after the trains stop at midnight.",
+    "coverageNote": "Surge pricing after 22:00 and on rain days."
+  },
+  {
+    "id": "tr_rental_car",
+    "kind": "transit",
+    "bucket": "localTransit",
+    "title": "Toyota Rent a Car compact + parking",
+    "costCents": 57500,
+    "costBasis": "per_day",
+    "estimated": true,
+    "confidence": "low",
+    "mode": "rental_car",
+    "perDayCents": 11500,
+    "days": 5,
+    "description": "Car, fuel, expressway tolls and hotel parking. Only worth it for the Takao trailhead or a day trip out of the prefecture.",
+    "coverageNote": "Central Tokyo parking runs $25-40 a day and an international permit is required."
+  }
+]
