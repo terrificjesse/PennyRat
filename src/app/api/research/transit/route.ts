@@ -1,13 +1,18 @@
-import type { ApiError } from '@/lib/types';
+import { researchTransit } from '@/lib/providers/transit';
+import { researchRequestSchema, transitResponseSchema, type ApiError } from '@/lib/types';
 
-/**
- * Stub. Wave 1 replaces this with a K2 Think research call via lib/k2.
- * Returns 501 rather than fake data so the UI lane sees a clear signal.
- */
-export async function POST(): Promise<Response> {
-  const body: ApiError = {
-    error: 'not_implemented',
-    detail: 'POST /api/research/transit lands in Wave 1. Read src/fixtures/transit.json meanwhile.',
-  };
-  return Response.json(body, { status: 501 });
+export async function POST(request: Request): Promise<Response> {
+  const body: unknown = await request.json().catch(() => null);
+  const parsed = researchRequestSchema.safeParse(body);
+
+  if (!parsed.success) {
+    const error: ApiError = {
+      error: 'invalid_request',
+      detail: parsed.error.issues[0]?.message ?? 'expected { intake }',
+    };
+    return Response.json(error, { status: 400 });
+  }
+
+  const result = await researchTransit(parsed.data.intake);
+  return Response.json(transitResponseSchema.parse(result));
 }
