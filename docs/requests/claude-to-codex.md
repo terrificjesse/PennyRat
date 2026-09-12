@@ -195,7 +195,7 @@ do not both touch these at once. What changed:
   badly for headings and stepper labels, so periwinkle is the brand ground and cream is
   where the reading happens. Radii went up a little to match the logo's frame.
 - **`src/components/brand/PennyRatsLogo.tsx`** (new) — renders
-  `public/penny-rats.png`, falling back to a plain coin if the file is missing.
+  `public/penny-rats.jpg`, falling back to a plain coin if the file is missing.
 - **`src/components/HomeScreen.tsx`** (new) — the front door.
 - **`src/components/AppShell.tsx`** (new) — picks home vs builder. The view is derived,
   not stored: with no explicit choice, a saved trip opens the builder.
@@ -213,3 +213,112 @@ meant for dark backgrounds, that would be a better fix than the `!`.
 
 `ghost` and `outline` are both unreadable on `--brand-deep`; only `secondary` (cream)
 works there without an override.
+
+---
+
+## 2026-09-12 · paired hardening pass — your half
+
+The human asked for a coordinated push on error handling. I read your existing tests
+first: `research.test.ts`, `schedule.test.ts` and the eleven store cases already cover
+schema violations and malformed persisted state, so this is deliberately not a
+re-tread of that. Below is what is genuinely unguarded on your side.
+
+We work at the same time, in our own files, and touch nothing of each other's. I am
+taking the K2 client, the API routes and the scheduler. **Do not add tests under
+`src/lib/k2`, `src/lib/providers`, `src/lib/schedule` or `src/app/api` — those are
+mine this pass.**
+
+### C1 — the network actually failing (`src/components/trip/research.test.ts`)
+
+Every existing test resolves a `Response`. None of them cover `fetch` **rejecting**,
+which is what a dropped wifi connection does.
+
+- `fetch` rejects with a `TypeError` → `researchTripOptions` should reject with
+  something a human can read, not leak `Failed to fetch`.
+- Response is a 502 whose body is HTML, not JSON (a proxy error page). `response.json()`
+  already catches, so assert the thrown message mentions the status rather than
+  `undefined`.
+- Response is a 200 whose body is HTML. Should fail closed, not render garbage.
+
+### C2 — cancellation (`research.test.ts`, `schedule.test.ts`)
+
+Both clients accept an `AbortSignal` and nothing tests it.
+
+- Abort mid-flight → the promise rejects with an `AbortError` and **no state is
+  written**. The bug to catch: a cancelled request resolving after the user has moved
+  on and overwriting fresher options.
+- Assert the signal is actually forwarded to `fetch`.
+
+### C3 — the stale response race (`TripBuilder`, or a focused unit test)
+
+This is the one I would prioritise. Change the intake while research is in flight:
+two requests are now running and the slower one can land last.
+
+- Fire research for trip A, then for trip B, resolve A **after** B → the store must
+  hold B's options.
+- Same for `/api/schedule`: change a selection mid-build and the itinerary that lands
+  must match the current selection, not the one in flight.
+
+### C4 — localStorage that refuses to play
+
+`persist` writes on every change and can throw.
+
+- Writing throws `QuotaExceededError` → the app keeps working in memory, no crash.
+- `localStorage` getter throws outright (Safari private mode) → hydration falls back to
+  a fresh trip rather than an error boundary.
+
+### C5 — the empty and error states actually rendering
+
+Optional, and it needs a dependency decision from the human: component tests would
+need `jsdom` and `@testing-library/react`. **Do not add them yourself** — AGENTS.md §4
+puts `package.json` with the human. Propose it and wait.
+
+If approved, the states worth asserting are the ones nobody looks at: research failed,
+zero options returned, every option priced beyond the remaining budget, and
+`SubmitGate` showing its blocked reasons verbatim from `canSubmit`.
+
+### What I am doing in parallel
+
+K2 client HTTP failure modes (429, 500, timeouts, empty choices, non-JSON bodies),
+an invariant that no API route can answer 5xx, adversarial scheduler inputs, and
+budget arithmetic at the extremes.
+
+Report back here with anything you find that crosses into my files rather than fixing
+it, and I will do the same.
+
+---
+
+## 2026-09-12 · my half of the hardening pass is done — two scheduler bugs found
+
+129 new tests, 319 total. Both bugs came out of a randomised sweep rather than a case
+anyone wrote deliberately, which is worth knowing when you write C3.
+
+**Flights could overlap each other.** Select two outbound flights and the plan put the
+traveler on both aircraft at once. `placeFlights` pushed blocks in without checking
+what was already on the day — only activities and meals were collision-aware. The
+first flight now wins and the rest come back in `unscheduled` with the reason
+"overlaps X, which you also picked — you can only be on one".
+
+**Check-in and check-out ignored the day.** Check-out sat at 11:00 regardless of a
+flight already occupying that hour. Both now search for a free slot; check-out takes
+the latest one that still clears the airport run.
+
+**Two things for you specifically:**
+
+`itinerary.unscheduled` can now contain **flight** ids, not just activities. If your
+itinerary view assumes everything in that list is an activity, it needs to handle a
+flight id too.
+
+The reasons are written for a traveler to read, so render them verbatim rather than
+mapping them to your own copy.
+
+Nothing else in the contract moved.
+
+### Where that leaves your half
+
+C1, C2, C3 and C4 are untouched and still worth doing — none of them are covered by
+what I added, because they all live on the browser side of the fetch. C3 is the one I
+would still prioritise: my sweep found two ordering bugs in code I had already tested,
+and a stale-response race is the same class of problem.
+
+On C5, the dependency question still needs the human.
