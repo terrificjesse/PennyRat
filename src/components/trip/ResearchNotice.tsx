@@ -41,6 +41,7 @@ export function ResearchNotice({ onRetry, state }: ResearchNoticeProps) {
       <div
         className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-control border border-danger/50 bg-danger-soft px-4 py-3"
         role="alert"
+        aria-label="Research failed"
       >
         <p className="text-sm text-danger">{state.error ?? "Research could not be loaded."}</p>
         <Button type="button" size="sm" variant="outline" onClick={onRetry}>
@@ -63,8 +64,8 @@ export function ResearchNotice({ onRetry, state }: ResearchNoticeProps) {
             Research notes ({state.meta.warnings.length})
           </summary>
           <ul className="mt-2 list-disc space-y-1 pl-5">
-            {state.meta.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+            {state.meta.warnings.map((warning, index) => (
+              <li key={`${index}-${warning}`}>{warning}</li>
             ))}
           </ul>
         </details>

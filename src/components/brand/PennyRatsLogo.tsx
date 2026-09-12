@@ -11,24 +11,14 @@ type LogoProps = {
   priority?: boolean;
 };
 
-const LOGO_SRC = "/penny-rats.jpg";
-
-/**
- * Where the drawn frame actually sits inside the 2048px file, measured off the
- * pixels rather than guessed: the white margin runs 208 left, 228 right, 156 top and
- * 234 bottom, so the artwork is neither centred nor square. These numbers crop to the
- * largest square that contains no white, which trims about 23px from the top and
- * bottom of the black border — a bit over one percent, and invisible at any size the
- * mark is used.
- */
-const CROP = { scale: 2048 / 1612, left: 0.129, top: 0.111, radius: 0.2 } as const;
+const LOGO_SRC = "/penny-rats.PNG";
 
 /**
  * The Penny Rats mark.
  *
- * Renders the artwork from `public/penny-rats.jpg`. The source is a JPEG, so it has
- * no transparency and carries a white margin around its own rounded frame; the
- * wrapper crops that margin off so the mark sits directly on whatever is behind it.
+ * Renders the transparent artwork from `public/penny-rats.PNG`. Keeping the complete
+ * canvas lets its hand-drawn outline sit naturally on both the periwinkle home screen
+ * and the cream planner header without a white box or a brittle pixel crop.
  *
  * If the file is missing the coin below stands in — deliberately just the coin,
  * because a bad redrawing of the rat would read as a mistake where a plain coin
@@ -45,20 +35,16 @@ export function PennyRatsLogo({
   if (!failed) {
     return (
       <span
-        className={`relative inline-block overflow-hidden ${className ?? ""}`}
-        style={{ width: size, height: size, borderRadius: size * CROP.radius }}
+        className={`relative inline-grid shrink-0 place-items-center ${className ?? ""}`}
+        style={{ width: size, height: size }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- a fixed-size local mark */}
         <img
           src={LOGO_SRC}
           alt="Penny Rats"
-          className="absolute max-w-none"
-          style={{
-            width: size * CROP.scale,
-            height: size * CROP.scale,
-            left: -size * CROP.left,
-            top: -size * CROP.top,
-          }}
+          width={size}
+          height={size}
+          className="block h-full w-full object-contain"
           loading={priority ? "eager" : "lazy"}
           onError={() => setFailed(true)}
         />

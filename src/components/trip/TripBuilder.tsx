@@ -2,20 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fixtureIntake } from "@/fixtures";
-import { canSubmit } from "@/lib/budget";
-import { useTripStore } from "@/lib/store/trip";
+import { applySelection, canSubmit } from "@/lib/budget";
+import { type SchedulePin, useTripStore } from "@/lib/store/trip";
 import type {
   ActivityOption,
-  FlightOption,
   LodgingOption,
   OptionKind,
+  ScheduleBlock,
   TransitOption,
   TripIntake,
   TripOption,
+  TravelOption,
 } from "@/lib/types";
 import { PennyRatsLogo } from "@/components/brand/PennyRatsLogo";
-import { BucketAllocation } from "@/components/budget/BucketAllocation";
 import { BudgetMeter } from "@/components/budget/BudgetMeter";
+import { TripCelebration } from "@/components/itinerary/TripCelebration";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -24,8 +25,16 @@ import { Stepper, type StepperStep } from "@/components/ui/Stepper";
 import type { ResearchLoadState } from "./ResearchNotice";
 import { SubmitGate } from "./SubmitGate";
 import { TripIntakeForm } from "./TripIntakeForm";
-import { researchTripOptions } from "./research";
+import { isAbortError } from "./jsonRequest";
 import { buildTripSchedule } from "./schedule";
+import {
+  intakeRequestKey,
+  isIntakeRequestCurrent,
+  isScheduleRequestCurrent,
+  researchCurrentTrip,
+  scheduleCurrentTrip,
+  scheduleRequestKey,
+} from "./requestState";
 import { ActivityStep } from "./steps/ActivityStep";
 import { FlightStep } from "./steps/FlightStep";
 import { LodgingStep } from "./steps/LodgingStep";
@@ -34,9 +43,9 @@ import { TransitStep } from "./steps/TransitStep";
 
 const WIZARD_STEPS: readonly StepperStep[] = [
   { id: "plan", label: "Plan", description: "Trip and budget" },
-  { id: "flights", label: "Flights", description: "There and back" },
-  { id: "activities", label: "Explore", description: "Food and things to do" },
+  { id: "travel", label: "Getting there", description: "There and back" },
   { id: "lodging", label: "Stay", description: "A place to recharge" },
+  { id: "activities", label: "Explore", description: "Food and things to do" },
   { id: "transit", label: "Around", description: "Local transportation" },
   { id: "schedule", label: "Schedule", description: "Your day-by-day plan" },
 ];
@@ -50,16 +59,9 @@ const RESEARCH_KINDS: readonly OptionKind[] = [
 
 const STEP_KINDS: Partial<Record<number, OptionKind>> = {
   1: "flight",
-  2: "activity",
-  3: "lodging",
+  2: "lodging",
+  3: "activity",
   4: "transit",
-};
-
-const KIND_STEPS: Record<OptionKind, number> = {
-  flight: 1,
-  activity: 2,
-  lodging: 3,
-  transit: 4,
 };
 
 function initialResearchState(): Record<OptionKind, ResearchLoadState> {
@@ -71,7 +73,10 @@ function initialResearchState(): Record<OptionKind, ResearchLoadState> {
   };
 }
 
-
+function blockStartMinutes(block: ScheduleBlock): number {
+  const [hour, minute] = block.start.split("T")[1].split(":").map(Number);
+  return hour * 60 + minute;
+}
 
 function BuilderSkeleton() {
   return (
@@ -115,18 +120,6 @@ function ResearchHeaderBadge({
   return <Badge variant="neutral">Options ready</Badge>;
 }
 
-function sameIntake(left: TripIntake | null, rightKey: string): boolean {
-  return left !== null && JSON.stringify(left) === rightKey;
-}
-
-function makeScheduleKey(
-  intake: TripIntake | null,
-  options: readonly TripOption[],
-  selectedIds: readonly string[],
-): string {
-  return JSON.stringify({ intake, options, selectedIds });
-}
-
 type TripBuilderProps = {
   /** Called when the traveler taps the logo to go back to the front door. */
   onHome?: () => void;
@@ -136,9 +129,13 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   const [hydrated, setHydrated] = useState(false);
   const [research, setResearch] = useState(initialResearchState);
   const [scheduleLoad, setScheduleLoad] = useState<ScheduleLoadState>({ status: "idle" });
+  const [scheduleEditError, setScheduleEditError] = useState<string>();
+  const [showCelebration, setShowCelebration] = useState(false);
   const mounted = useRef(false);
   const startedFor = useRef<string | null>(null);
   const scheduleStartedFor = useRef<string | null>(null);
+  const scheduleEditController = useRef<AbortController | null>(null);
+  const scheduleEditSequence = useRef(0);
   const stepContent = useRef<HTMLDivElement>(null);
   const lastFocusedStep = useRef<number | null>(null);
   const intake = useTripStore((state) => state.intake);
@@ -147,12 +144,16 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   const options = useTripStore((state) => state.options);
   const currentStep = useTripStore((state) => state.currentStep);
   const itinerary = useTripStore((state) => state.itinerary);
+  const excludedIds = useTripStore((state) => state.excludedIds);
+  const pinned = useTripStore((state) => state.pinned);
+  const scheduleCelebrated = useTripStore((state) => state.scheduleCelebrated);
   const setIntake = useTripStore((state) => state.setIntake);
   const adjustBucket = useTripStore((state) => state.adjustBucket);
-  const resetBudgetPlan = useTripStore((state) => state.resetBudgetPlan);
-  const setOptionsForKind = useTripStore((state) => state.setOptionsForKind);
-  const setItinerary = useTripStore((state) => state.setItinerary);
   const setCurrentStep = useTripStore((state) => state.setCurrentStep);
+  const applyScheduleUpdate = useTripStore((state) => state.applyScheduleUpdate);
+  const markScheduleCelebrated = useTripStore(
+    (state) => state.markScheduleCelebrated,
+  );
 
   useEffect(() => {
     mounted.current = true;
@@ -165,6 +166,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     return () => {
       active = false;
       mounted.current = false;
+      scheduleEditController.current?.abort();
     };
   }, []);
 
@@ -181,7 +183,21 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     return () => cancelAnimationFrame(frame);
   }, [currentStep, hydrated]);
 
-  const intakeKey = intake ? JSON.stringify(intake) : "";
+  useEffect(() => {
+    if (
+      !hydrated ||
+      currentStep !== WIZARD_STEPS.length - 1 ||
+      !itinerary ||
+      scheduleCelebrated
+    ) {
+      return;
+    }
+
+    setShowCelebration(true);
+    markScheduleCelebrated();
+  }, [currentStep, hydrated, itinerary, markScheduleCelebrated, scheduleCelebrated]);
+
+  const intakeKey = intakeRequestKey(intake);
   const researchEnabled = currentStep > 0;
 
   const loadResearch = useCallback(
@@ -192,19 +208,20 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
       signal?: AbortSignal,
     ) => {
       try {
-        const result = await researchTripOptions(kind, requestedIntake, signal);
-        if (!mounted.current) return;
-        if (!sameIntake(useTripStore.getState().intake, requestedIntakeKey)) return;
+        const { result, committed } = await researchCurrentTrip(kind, requestedIntake, {
+          signal,
+          canCommit: () => mounted.current,
+        });
+        if (!committed) return;
 
-        setOptionsForKind(kind, result.options);
         setResearch((state) => ({
           ...state,
           [kind]: { status: "ready", meta: result.meta },
         }));
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (isAbortError(error)) return;
         if (!mounted.current) return;
-        if (!sameIntake(useTripStore.getState().intake, requestedIntakeKey)) return;
+        if (!isIntakeRequestCurrent(requestedIntakeKey)) return;
 
         setResearch((state) => ({
           ...state,
@@ -215,7 +232,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
         }));
       }
     },
-    [setOptionsForKind],
+    [],
   );
 
   useEffect(() => {
@@ -256,7 +273,9 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     scheduleStartedFor.current = null;
     setResearch(initialResearchState());
     setScheduleLoad({ status: "idle" });
+    setScheduleEditError(undefined);
     setIntake(nextIntake);
+    setCurrentStep(1);
   };
 
   const handleSelectionChange = useCallback((id: string, selected: boolean) => {
@@ -268,7 +287,9 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
       const conflictingIds = state.options
         .filter((option) => {
           if (target.kind === "flight") {
-            return option.kind === "flight" && option.direction === target.direction;
+            if (option.kind !== "flight") return false;
+            if (target.direction === "roundtrip") return true;
+            return option.direction === target.direction || option.direction === "roundtrip";
           }
           return option.kind === target.kind;
         })
@@ -287,44 +308,57 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     () => (intake ? canSubmit(intake, options, selectedIds) : { ok: false, reasons: [] }),
     [intake, options, selectedIds],
   );
-  const scheduleKey = makeScheduleKey(intake, options, selectedIds);
+  const budgetState = useMemo(
+    () =>
+      intake && budgetPlan
+        ? applySelection(budgetPlan, intake.budgetTotal, options, selectedIds)
+        : null,
+    [budgetPlan, intake, options, selectedIds],
+  );
+  const remainingCents = budgetState?.remainingTotal ?? 0;
+  const scheduleKey = scheduleRequestKey(
+    intake,
+    options,
+    selectedIds,
+    excludedIds,
+    pinned,
+  );
 
   const loadSchedule = useCallback(
     async (
       requestedIntake: TripIntake,
       requestedOptions: readonly TripOption[],
       requestedIds: readonly string[],
+      requestedExcludedIds: readonly string[],
+      requestedPinned: readonly SchedulePin[],
       requestedKey: string,
       signal?: AbortSignal,
     ) => {
       try {
-        const result = await buildTripSchedule(
+        const { committed } = await scheduleCurrentTrip(
           requestedIntake,
           requestedOptions,
           requestedIds,
-          signal,
+          {
+            signal,
+            canCommit: () => mounted.current,
+            excludedIds: [...requestedExcludedIds],
+            pinned: [...requestedPinned],
+          },
         );
-        if (!mounted.current) return;
-        const current = useTripStore.getState();
-        if (makeScheduleKey(current.intake, current.options, current.selectedIds) !== requestedKey) {
-          return;
-        }
-        setItinerary(result);
+        if (!committed) return;
         setScheduleLoad({ status: "ready" });
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (isAbortError(error)) return;
         if (!mounted.current) return;
-        const current = useTripStore.getState();
-        if (makeScheduleKey(current.intake, current.options, current.selectedIds) !== requestedKey) {
-          return;
-        }
+        if (!isScheduleRequestCurrent(requestedKey)) return;
         setScheduleLoad({
           status: "error",
           error: error instanceof Error ? error.message : "The schedule could not be built.",
         });
       }
     },
-    [setItinerary],
+    [],
   );
 
   useEffect(() => {
@@ -342,9 +376,17 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     let settled = false;
     scheduleStartedFor.current = scheduleKey;
     setScheduleLoad({ status: "loading" });
-    void loadSchedule(intake, options, selectedIds, scheduleKey, controller.signal).then(() => {
-      settled = true;
-    });
+    void loadSchedule(
+      intake,
+      options,
+      selectedIds,
+      excludedIds,
+      pinned,
+      scheduleKey,
+      controller.signal,
+    ).then(() => {
+        settled = true;
+      });
 
     return () => {
       controller.abort();
@@ -354,10 +396,12 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     };
   }, [
     currentStep,
+    excludedIds,
     intake,
     itinerary,
     loadSchedule,
     options,
+    pinned,
     scheduleKey,
     selectedIds,
     submitCheck.ok,
@@ -367,8 +411,140 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     if (!intake || !submitCheck.ok) return;
     scheduleStartedFor.current = scheduleKey;
     setScheduleLoad({ status: "loading" });
-    void loadSchedule(intake, options, selectedIds, scheduleKey);
+    void loadSchedule(intake, options, selectedIds, excludedIds, pinned, scheduleKey);
   };
+
+  const runScheduleEdit = useCallback(
+    async (
+      update: {
+        selectedIds: readonly string[];
+        excludedIds: readonly string[];
+        pinned: readonly SchedulePin[];
+      },
+      rejectIfUnscheduledId?: string,
+    ) => {
+      const state = useTripStore.getState();
+      if (!state.intake) return;
+
+      scheduleEditController.current?.abort();
+      const controller = new AbortController();
+      const sequence = scheduleEditSequence.current + 1;
+      scheduleEditSequence.current = sequence;
+      scheduleEditController.current = controller;
+      setScheduleEditError(undefined);
+      setScheduleLoad({ status: "loading" });
+
+      try {
+        const nextItinerary = await buildTripSchedule(
+          state.intake,
+          state.options,
+          update.selectedIds,
+          controller.signal,
+          fetch,
+          { excludedIds: [...update.excludedIds], pinned: [...update.pinned] },
+        );
+        if (controller.signal.aborted || sequence !== scheduleEditSequence.current) return;
+
+        const rejected = rejectIfUnscheduledId
+          ? nextItinerary.unscheduled.find((item) => item.id === rejectIfUnscheduledId)
+          : undefined;
+        if (rejected) {
+          setScheduleEditError(rejected.reason);
+          setScheduleLoad({ status: "ready" });
+          return;
+        }
+
+        applyScheduleUpdate({ ...update, itinerary: nextItinerary });
+        setScheduleLoad({ status: "ready" });
+      } catch (error) {
+        if (isAbortError(error) || sequence !== scheduleEditSequence.current) return;
+        setScheduleEditError(
+          error instanceof Error ? error.message : "The itinerary could not be updated.",
+        );
+        setScheduleLoad({ status: "ready" });
+      }
+    },
+    [applyScheduleUpdate],
+  );
+
+  const handleAddOption = useCallback(
+    (_date: string, option: TripOption) => {
+      const state = useTripStore.getState();
+      void runScheduleEdit({
+        selectedIds: [...new Set([...state.selectedIds, option.id])],
+        excludedIds: state.excludedIds.filter((id) => id !== option.id),
+        pinned: state.pinned,
+      });
+    },
+    [runScheduleEdit],
+  );
+
+  const handleRemoveSuggestion = useCallback(
+    (block: ScheduleBlock) => {
+      if (!block.refId) return;
+      const state = useTripStore.getState();
+      void runScheduleEdit({
+        selectedIds: state.selectedIds.filter((id) => id !== block.refId),
+        excludedIds: [...new Set([...state.excludedIds, block.refId])],
+        pinned: state.pinned.filter((pin) => pin.id !== block.refId),
+      });
+    },
+    [runScheduleEdit],
+  );
+
+  const handleSwapBlock = useCallback(
+    (block: ScheduleBlock, replacement: TripOption) => {
+      if (!block.refId) return;
+      const state = useTripStore.getState();
+      const pin: SchedulePin = {
+        id: replacement.id,
+        date: block.start.slice(0, 10),
+        startMinutes: blockStartMinutes(block),
+      };
+      void runScheduleEdit(
+        {
+          selectedIds: [
+            ...new Set([
+              ...state.selectedIds.filter((id) => id !== block.refId),
+              replacement.id,
+            ]),
+          ],
+          excludedIds: [
+            ...new Set([
+              ...state.excludedIds.filter((id) => id !== replacement.id),
+              block.refId,
+            ]),
+          ],
+          pinned: [
+            ...state.pinned.filter(
+              (existing) => existing.id !== block.refId && existing.id !== replacement.id,
+            ),
+            pin,
+          ],
+        },
+        replacement.id,
+      );
+    },
+    [runScheduleEdit],
+  );
+
+  const handleMoveBlock = useCallback(
+    (id: string, date: string, startMinutes: number) => {
+      const state = useTripStore.getState();
+      void runScheduleEdit(
+        {
+          selectedIds: state.selectedIds,
+          excludedIds: state.excludedIds.filter((excludedId) => excludedId !== id),
+          pinned: [
+            ...state.pinned.filter((pin) => pin.id !== id),
+            { id, date, startMinutes },
+          ],
+        },
+        id,
+      );
+    },
+    [runScheduleEdit],
+  );
 
   const steps = useMemo(
     () =>
@@ -385,7 +561,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
 
   const activeKind = STEP_KINDS[currentStep];
   const flights = options.filter(
-    (option): option is FlightOption => option.kind === "flight",
+    (option): option is TravelOption => option.kind === "flight",
   );
   const activities = options.filter(
     (option): option is ActivityOption => option.kind === "activity",
@@ -398,12 +574,17 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   );
 
   let activeStep;
-  if (intake) switch (currentStep) {
+  if (intake && budgetPlan && budgetState) switch (currentStep) {
     case 1:
       activeStep = (
         <FlightStep
+          budget={budgetState}
           options={flights}
+          plan={budgetPlan}
+          remainingCents={remainingCents}
           selectedIds={selectedIds}
+          total={intake.budgetTotal}
+          onBucketChange={adjustBucket}
           onSelectionChange={handleSelectionChange}
           research={research.flight}
           onRetry={() => retryResearch("flight")}
@@ -412,23 +593,34 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
       break;
     case 2:
       activeStep = (
-        <ActivityStep
-          options={activities}
+        <LodgingStep
+          budget={budgetState}
+          options={lodging}
+          plan={budgetPlan}
+          remainingCents={remainingCents}
           selectedIds={selectedIds}
+          total={intake.budgetTotal}
+          onBucketChange={adjustBucket}
           onSelectionChange={handleSelectionChange}
-          research={research.activity}
-          onRetry={() => retryResearch("activity")}
+          research={research.lodging}
+          onRetry={() => retryResearch("lodging")}
         />
       );
       break;
     case 3:
       activeStep = (
-        <LodgingStep
-          options={lodging}
+        <ActivityStep
+          budget={budgetState}
+          intake={intake}
+          options={activities}
+          plan={budgetPlan}
+          remainingCents={remainingCents}
           selectedIds={selectedIds}
+          total={intake.budgetTotal}
+          onBucketChange={adjustBucket}
           onSelectionChange={handleSelectionChange}
-          research={research.lodging}
-          onRetry={() => retryResearch("lodging")}
+          research={research.activity}
+          onRetry={() => retryResearch("activity")}
         />
       );
       break;
@@ -436,8 +628,13 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
       activeStep = (
         <>
           <TransitStep
+            budget={budgetState}
             options={transit}
+            plan={budgetPlan}
+            remainingCents={remainingCents}
             selectedIds={selectedIds}
+            total={intake.budgetTotal}
+            onBucketChange={adjustBucket}
             onSelectionChange={handleSelectionChange}
             research={research.transit}
             onRetry={() => retryResearch("transit")}
@@ -454,12 +651,17 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     default:
       activeStep = submitCheck.ok ? (
         <ScheduleStep
+          editing={scheduleLoad.status === "loading"}
+          editError={scheduleEditError}
           intake={intake}
           itinerary={itinerary}
           options={options}
           state={scheduleLoad}
+          onAddOption={handleAddOption}
+          onMoveBlock={handleMoveBlock}
+          onRemoveSuggestion={handleRemoveSuggestion}
           onRetry={retrySchedule}
-          onReviewOption={(option) => setCurrentStep(KIND_STEPS[option.kind])}
+          onSwapBlock={handleSwapBlock}
         />
       ) : (
         <SubmitGate
@@ -473,6 +675,10 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <TripCelebration
+        open={showCelebration && currentStep === WIZARD_STEPS.length - 1}
+        onComplete={() => setShowCelebration(false)}
+      />
       <header className="no-print border-b border-border bg-surface/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
@@ -492,11 +698,17 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
           {currentStep === WIZARD_STEPS.length - 1 ? (
             <Badge
               variant={
-                itinerary ? "success" : scheduleLoad.status === "error" ? "warning" : "accent"
+                itinerary && scheduleLoad.status !== "loading"
+                  ? "success"
+                  : scheduleLoad.status === "error"
+                    ? "warning"
+                    : "accent"
               }
             >
-              {itinerary
+              {itinerary && scheduleLoad.status !== "loading"
                 ? "Itinerary ready"
+                : itinerary
+                  ? "Updating itinerary"
                 : scheduleLoad.status === "error"
                   ? "Schedule needs attention"
                   : "Building schedule"}
@@ -532,7 +744,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
                     Build a trip that fits before you fall for it.
                   </h1>
                   <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-                    Tell us the non-negotiables. We’ll turn the total into a practical plan you can tune.
+                    Tell us the non-negotiables. You’ll tune each part of the budget beside the real prices it buys.
                   </p>
                 </div>
                 <Button
@@ -552,46 +764,31 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
               />
             </Card>
 
-            <aside className="space-y-6 lg:sticky lg:top-6">
-              {intake && budgetPlan ? (
-                <>
-                  <Card variant="raised" padding="lg">
-                    <BucketAllocation
-                      plan={budgetPlan}
-                      total={intake.budgetTotal}
-                      onBucketChange={adjustBucket}
-                      onReset={resetBudgetPlan}
-                    />
-                    <Button
-                      type="button"
-                      size="lg"
-                      className="mt-8 w-full"
-                      onClick={() => setCurrentStep(1)}
-                    >
-                      Research and choose flights
-                    </Button>
-                  </Card>
-                  <BudgetMeter
-                    plan={budgetPlan}
-                    total={intake.budgetTotal}
-                    options={options}
-                    selectedIds={selectedIds}
-                  />
-                </>
-              ) : (
-                <Card variant="muted">
-                  <p className="text-sm font-semibold text-foreground">
-                    Your budget plan will appear here.
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Add dates and a total to see flights, lodging, food, activities, local transit, and buffer separated clearly.
-                  </p>
-                </Card>
-              )}
+            <aside className="lg:sticky lg:top-6">
+              <Card variant="muted" padding="lg">
+                <Badge variant="accent">Prices before percentages</Badge>
+                <h2 className="mt-4 text-xl font-semibold tracking-[-0.025em] text-foreground">
+                  One total now. Real tradeoffs next.
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  After you save the trip basics, each step shows what is left and lets you move money while looking at the options.
+                </p>
+              </Card>
             </aside>
           </div>
         ) : (
           <div className="grid items-start gap-6 print:block lg:grid-cols-[minmax(0,1.4fr)_minmax(19rem,0.6fr)]">
+            {currentStep === WIZARD_STEPS.length - 1 && (
+              <div className="no-print lg:hidden">
+                <BudgetMeter
+                  compact
+                  plan={budgetPlan}
+                  total={intake.budgetTotal}
+                  options={options}
+                  selectedIds={selectedIds}
+                />
+              </div>
+            )}
             <div>
               {activeStep}
 
@@ -611,7 +808,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
               </div>
             </div>
 
-            <aside className="no-print lg:sticky lg:top-6">
+            <aside className="no-print hidden lg:sticky lg:top-6 lg:block">
               <BudgetMeter
                 plan={budgetPlan}
                 total={intake.budgetTotal}

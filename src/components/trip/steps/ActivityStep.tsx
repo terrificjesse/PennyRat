@@ -1,4 +1,12 @@
-import type { ActivityOption } from "@/lib/types";
+import { forecastFood, formatCents, tripNights, type BudgetState } from "@/lib/budget";
+import type {
+  ActivityOption,
+  BucketKey,
+  BudgetPlan,
+  Cents,
+  TripIntake,
+} from "@/lib/types";
+import { StepBudgetControl } from "@/components/budget/StepBudgetControl";
 import { OptionList } from "@/components/options/OptionList";
 import {
   OptionListSkeleton,
@@ -13,6 +21,12 @@ type ActivityStepProps = {
   onSelectionChange: (id: string, selected: boolean) => void;
   research: ResearchLoadState;
   onRetry: () => void;
+  remainingCents: Cents;
+  intake: TripIntake;
+  budget: BudgetState;
+  plan: BudgetPlan;
+  total: Cents;
+  onBucketChange: (bucket: BucketKey, value: Cents) => void;
 };
 
 function formatDuration(totalMinutes: number): string {
@@ -58,14 +72,21 @@ function ActivityDetails({ option }: { option: ActivityOption }) {
 }
 
 export function ActivityStep({
+  budget,
+  intake,
+  onBucketChange,
   onRetry,
   onSelectionChange,
   options,
+  plan,
+  remainingCents,
   research,
   selectedIds,
+  total,
 }: ActivityStepProps) {
   const restaurants = options.filter((option) => option.category === "restaurant");
   const activities = options.filter((option) => option.category !== "restaurant");
+  const food = forecastFood(intake, options);
 
   return (
     <div>
@@ -79,6 +100,15 @@ export function ActivityStep({
         </p>
       </div>
 
+      <StepBudgetControl
+        budget={budget}
+        buckets={["activities", "food"]}
+        plan={plan}
+        total={total}
+        onBucketChange={onBucketChange}
+        note={`Plan on about ${formatCents(food.totalCents)} for ${food.mealsPerDay} meals a day across ${tripNights(intake)} days.`}
+      />
+
       <ResearchNotice state={research} onRetry={onRetry} />
       {research.status === "loading" && options.length === 0 ? (
         <OptionListSkeleton />
@@ -89,6 +119,7 @@ export function ActivityStep({
             description="Museums, outdoors, attractions, and experiences matched to your interests."
             emptyMessage="No non-food activities matched this trip."
             options={activities}
+            remainingCents={remainingCents}
             selectedIds={selectedIds}
             onSelectionChange={onSelectionChange}
             renderDetails={(option) => <ActivityDetails option={option} />}
@@ -98,6 +129,7 @@ export function ActivityStep({
             description="Meals are priced for the whole party and tracked in their own budget."
             emptyMessage="No restaurants matched this trip."
             options={restaurants}
+            remainingCents={remainingCents}
             selectedIds={selectedIds}
             onSelectionChange={onSelectionChange}
             renderDetails={(option) => <ActivityDetails option={option} />}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
-import type { TripOption } from "@/lib/types";
+import type { Cents, TripOption } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { SelectableCard } from "./SelectableCard";
 
@@ -13,6 +13,7 @@ type OptionListProps<TOption extends TripOption> = {
   title: string;
   description?: string;
   emptyMessage?: string;
+  remainingCents?: Cents;
 };
 
 export function OptionList<TOption extends TripOption>({
@@ -21,11 +22,17 @@ export function OptionList<TOption extends TripOption>({
   onSelectionChange,
   options,
   renderDetails,
+  remainingCents,
   selectedIds,
   title,
 }: OptionListProps<TOption>) {
   const selected = new Set(selectedIds);
   const titleId = useId();
+  const unselectedOptions = options.filter((option) => !selected.has(option.id));
+  const everyOptionExceedsRemaining =
+    remainingCents !== undefined &&
+    unselectedOptions.length > 0 &&
+    unselectedOptions.every((option) => option.costCents > remainingCents);
 
   return (
     <section aria-labelledby={titleId}>
@@ -43,6 +50,17 @@ export function OptionList<TOption extends TripOption>({
         )}
       </div>
 
+      {everyOptionExceedsRemaining && (
+        <div
+          role="status"
+          aria-label={`${title} affordability`}
+          className="mb-4 rounded-control border border-warning/50 bg-warning-soft px-4 py-3 text-sm leading-6 text-foreground"
+        >
+          <span className="font-semibold">Every option here costs more than you have left.</span>{" "}
+          You can still choose one and adjust another part of the trip.
+        </div>
+      )}
+
       {options.length > 0 ? (
         <ul className="grid gap-4" role="list">
           {options.map((option) => (
@@ -50,6 +68,11 @@ export function OptionList<TOption extends TripOption>({
               <SelectableCard
                 option={option}
                 selected={selected.has(option.id)}
+                overRemaining={
+                  remainingCents !== undefined &&
+                  !selected.has(option.id) &&
+                  option.costCents > remainingCents
+                }
                 onSelectedChange={onSelectionChange}
                 details={renderDetails?.(option)}
               />

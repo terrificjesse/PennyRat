@@ -14,14 +14,18 @@ import { TripBuilder } from "@/components/trip/TripBuilder";
  * Coming home does not throw away a trip in progress — the store keeps it, so the
  * resume button drops you back exactly where you were.
  *
- * The view is derived rather than stored: with no explicit choice yet, a saved trip
- * opens the builder and an empty one opens the front door.
+ * The home screen is always the front door on a fresh visit. Opening or starting a
+ * trip is an explicit choice, which keeps a library of several plans predictable.
  */
 export function AppShell() {
-  const intake = useTripStore((state) => state.intake);
+  const activeTripId = useTripStore((state) => state.activeTripId);
+  const savedTrips = useTripStore((state) => state.savedTrips);
   const setIntake = useTripStore((state) => state.setIntake);
   const setCurrentStep = useTripStore((state) => state.setCurrentStep);
   const resetTrip = useTripStore((state) => state.resetTrip);
+  const openSavedTrip = useTripStore((state) => state.openSavedTrip);
+  const renameSavedTrip = useTripStore((state) => state.renameSavedTrip);
+  const deleteSavedTrip = useTripStore((state) => state.deleteSavedTrip);
 
   const [intent, setIntent] = useState<"home" | "builder" | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -46,22 +50,29 @@ export function AppShell() {
     );
   }
 
-  const view = intent ?? (intake ? "builder" : "home");
+  const view = intent ?? "home";
 
   if (view === "home") {
     return (
       <HomeScreen
+        activeTripId={activeTripId}
+        savedTrips={savedTrips}
         onStart={() => {
           resetTrip();
           setIntent("builder");
         }}
         onUseSample={() => {
+          resetTrip();
           setIntake(fixtureIntake);
           setCurrentStep(1);
           setIntent("builder");
         }}
-        onResume={intake ? () => setIntent("builder") : undefined}
-        resumeLabel={intake ? `Back to ${intake.destination.split(",")[0]}` : undefined}
+        onOpenTrip={(id) => {
+          openSavedTrip(id);
+          setIntent("builder");
+        }}
+        onRenameTrip={renameSavedTrip}
+        onDeleteTrip={deleteSavedTrip}
       />
     );
   }

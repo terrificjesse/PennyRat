@@ -9,6 +9,7 @@ export type ProgressProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   label?: ReactNode;
   valueLabel?: ReactNode;
   ariaLabel?: string;
+  ariaValueText?: string;
   tone?: ProgressTone;
   size?: ProgressSize;
   indicatorClassName?: string;
@@ -35,6 +36,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 export const Progress = forwardRef<HTMLDivElement, ProgressProps>(function Progress(
   {
     ariaLabel,
+    ariaValueText,
     className,
     indicatorClassName,
     label,
@@ -66,6 +68,7 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(function Progr
         aria-valuemin={0}
         aria-valuemax={safeMax}
         aria-valuenow={safeValue}
+        aria-valuetext={ariaValueText}
         className={cx("w-full overflow-hidden rounded-full bg-muted", sizeClasses[size])}
       >
         <div

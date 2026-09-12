@@ -72,7 +72,7 @@ const FIELD_FOCUS_SELECTORS: Record<keyof TripIntake, string> = {
 };
 
 const inputClasses =
-  "min-h-11 w-full rounded-control border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-foreground shadow-control outline-none transition placeholder:text-muted-foreground/70 focus:border-accent focus:ring-[3px] focus:ring-focus/20 aria-invalid:border-danger aria-invalid:ring-danger/15";
+  "min-h-11 w-full rounded-control border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-foreground shadow-control outline-none transition placeholder:text-muted-foreground/70 focus:border-accent focus:ring-[3px] focus:ring-focus focus:ring-offset-2 focus:ring-offset-background aria-invalid:border-danger aria-invalid:ring-danger";
 
 function formValues(intake?: TripIntake | null): FormValues {
   if (!intake) {
@@ -337,7 +337,7 @@ export function TripIntakeForm({ initialValue, onSubmit }: TripIntakeFormProps) 
                 onChange={() => updateField("pace", option.value)}
                 className="peer sr-only"
               />
-              <span className="block h-full rounded-control border border-border bg-surface p-4 transition-colors peer-checked:border-accent peer-checked:bg-accent-soft peer-focus-visible:ring-[3px] peer-focus-visible:ring-focus/25">
+              <span className="block h-full rounded-control border border-border bg-surface p-4 transition-colors peer-checked:border-accent peer-checked:bg-accent-soft peer-focus-visible:ring-[3px] peer-focus-visible:ring-focus peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background">
                 <span className="block text-sm font-semibold text-foreground">{option.label}</span>
                 <span className="mt-1 block text-sm leading-5 text-muted-foreground">{option.description}</span>
               </span>

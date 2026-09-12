@@ -1,6 +1,6 @@
 "use client";
 
-import type { Itinerary, TripIntake, TripOption } from "@/lib/types";
+import type { Itinerary, ScheduleBlock, TripIntake, TripOption } from "@/lib/types";
 import { ItineraryView } from "@/components/itinerary/ItineraryView";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +18,12 @@ type ScheduleStepProps = {
   options: readonly TripOption[];
   state: ScheduleLoadState;
   onRetry: () => void;
-  onReviewOption: (option: TripOption) => void;
+  editing?: boolean;
+  editError?: string;
+  onAddOption: (date: string, option: TripOption) => void;
+  onMoveBlock: (id: string, date: string, startMinutes: number) => void;
+  onRemoveSuggestion: (block: ScheduleBlock) => void;
+  onSwapBlock: (block: ScheduleBlock, replacement: TripOption) => void;
 };
 
 function ScheduleSkeleton() {
@@ -43,14 +48,19 @@ function ScheduleSkeleton() {
 }
 
 export function ScheduleStep({
+  editError,
+  editing = false,
   intake,
   itinerary,
+  onAddOption,
+  onMoveBlock,
   onRetry,
-  onReviewOption,
+  onRemoveSuggestion,
+  onSwapBlock,
   options,
   state,
 }: ScheduleStepProps) {
-  if (state.status === "loading" || (state.status === "idle" && !itinerary)) {
+  if ((state.status === "loading" || state.status === "idle") && !itinerary) {
     return <ScheduleSkeleton />;
   }
 
@@ -86,7 +96,9 @@ export function ScheduleStep({
     <div>
       <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Badge variant="success">Itinerary built</Badge>
+          <Badge variant={editing ? "accent" : "success"}>
+            {editing ? "Updating itinerary" : "Itinerary built"}
+          </Badge>
           <p className="mt-2 text-sm text-muted-foreground">
             Times are local. Review booking details before you pay.
           </p>
@@ -95,11 +107,20 @@ export function ScheduleStep({
           Print itinerary
         </Button>
       </div>
+      {editError && (
+        <div role="alert" className="no-print mb-5 rounded-control border border-danger/50 bg-danger-soft px-4 py-3 text-sm text-danger">
+          {editError}
+        </div>
+      )}
       <ItineraryView
+        editing={editing}
         itinerary={itinerary}
         intake={intake}
         options={options}
-        onReviewOption={onReviewOption}
+        onAddOption={onAddOption}
+        onMoveBlock={onMoveBlock}
+        onRemoveSuggestion={onRemoveSuggestion}
+        onSwapBlock={onSwapBlock}
       />
     </div>
   );

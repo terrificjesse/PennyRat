@@ -9,6 +9,7 @@ import {
   type TripIntake,
   type TripOption,
 } from "@/lib/types";
+import { postJson } from "./jsonRequest";
 
 export type ResearchResult = {
   options: TripOption[];
@@ -41,13 +42,17 @@ export async function researchTripOptions(
   signal?: AbortSignal,
   fetcher: typeof fetch = fetch,
 ): Promise<ResearchResult> {
-  const response = await fetcher(endpoints[kind], {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ intake }),
+  const { response, body } = await postJson(
+    endpoints[kind],
+    { intake },
+    {
+      network: "Research could not connect to PennyRat. Check your connection and try again.",
+      unreadable: "Research returned an unreadable response. Please try again.",
+      status: (status) => `Research request failed with status ${status}.`,
+    },
     signal,
-  });
-  const body: unknown = await response.json().catch(() => null);
+    fetcher,
+  );
 
   if (!response.ok) {
     const parsedError = apiErrorSchema.safeParse(body);

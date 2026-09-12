@@ -59,7 +59,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
         className={cx(
           "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-[0.375rem] border bg-surface text-transparent shadow-control transition-colors",
           "peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground",
-          "peer-focus-visible:ring-[3px] peer-focus-visible:ring-focus/25",
+          "peer-focus-visible:ring-[3px] peer-focus-visible:ring-focus peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface",
           "peer-disabled:bg-muted peer-disabled:shadow-none",
           hasError && "border-danger",
         )}

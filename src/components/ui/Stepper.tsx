@@ -48,9 +48,16 @@ export function Stepper({
     Math.max(Math.trunc(currentStep), 0),
     Math.max(steps.length - 1, 0),
   );
+  const activeStep = steps[activeIndex];
+  const activeLabel =
+    activeStep?.ariaLabel ??
+    (typeof activeStep?.label === "string" ? activeStep.label : activeStep?.id);
 
   return (
     <nav aria-label={ariaLabel} className={className}>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        Step {activeIndex + 1} of {steps.length}: {activeLabel}
+      </p>
       <ol className="flex w-full items-start" role="list">
         {steps.map((step, index) => {
           const complete = index < activeIndex;
@@ -84,7 +91,7 @@ export function Stepper({
                   type="button"
                   className={cx(
                     markerClasses,
-                    "cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25",
+                    "cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   )}
                   onClick={() => onStepClick?.(index, step)}
                   aria-label={

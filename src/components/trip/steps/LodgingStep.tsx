@@ -1,5 +1,6 @@
-import { formatCents } from "@/lib/budget";
-import type { LodgingOption } from "@/lib/types";
+import { formatCents, type BudgetState } from "@/lib/budget";
+import type { BucketKey, BudgetPlan, Cents, LodgingOption } from "@/lib/types";
+import { StepBudgetControl } from "@/components/budget/StepBudgetControl";
 import { OptionList } from "@/components/options/OptionList";
 import {
   OptionListSkeleton,
@@ -14,6 +15,11 @@ type LodgingStepProps = {
   onSelectionChange: (id: string, selected: boolean) => void;
   research: ResearchLoadState;
   onRetry: () => void;
+  remainingCents: Cents;
+  budget: BudgetState;
+  plan: BudgetPlan;
+  total: Cents;
+  onBucketChange: (bucket: BucketKey, value: Cents) => void;
 };
 
 function LodgingDetails({ option }: { option: LodgingOption }) {
@@ -44,11 +50,16 @@ function LodgingDetails({ option }: { option: LodgingOption }) {
 }
 
 export function LodgingStep({
+  budget,
+  onBucketChange,
   onRetry,
   onSelectionChange,
   options,
+  plan,
+  remainingCents,
   research,
   selectedIds,
+  total,
 }: LodgingStepProps) {
   return (
     <div>
@@ -62,6 +73,15 @@ export function LodgingStep({
         </p>
       </div>
 
+      <StepBudgetControl
+        budget={budget}
+        buckets={["lodging"]}
+        plan={plan}
+        total={total}
+        onBucketChange={onBucketChange}
+        note="Move money toward the stay after comparing complete-trip prices."
+      />
+
       <ResearchNotice state={research} onRetry={onRetry} />
       {research.status === "loading" && options.length === 0 ? (
         <OptionListSkeleton />
@@ -71,6 +91,7 @@ export function LodgingStep({
           description="The large price is the complete stay; the nightly rate is context only."
           emptyMessage="No lodging matched this trip."
           options={options}
+          remainingCents={remainingCents}
           selectedIds={selectedIds}
           onSelectionChange={onSelectionChange}
           renderDetails={(option) => <LodgingDetails option={option} />}

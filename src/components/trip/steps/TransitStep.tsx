@@ -1,5 +1,6 @@
-import { formatCents } from "@/lib/budget";
-import type { TransitOption } from "@/lib/types";
+import { formatCents, type BudgetState } from "@/lib/budget";
+import type { BucketKey, BudgetPlan, Cents, TransitOption } from "@/lib/types";
+import { StepBudgetControl } from "@/components/budget/StepBudgetControl";
 import { OptionList } from "@/components/options/OptionList";
 import {
   OptionListSkeleton,
@@ -14,6 +15,11 @@ type TransitStepProps = {
   onSelectionChange: (id: string, selected: boolean) => void;
   research: ResearchLoadState;
   onRetry: () => void;
+  remainingCents: Cents;
+  budget: BudgetState;
+  plan: BudgetPlan;
+  total: Cents;
+  onBucketChange: (bucket: BucketKey, value: Cents) => void;
 };
 
 function TransitDetails({ option }: { option: TransitOption }) {
@@ -35,11 +41,16 @@ function TransitDetails({ option }: { option: TransitOption }) {
 }
 
 export function TransitStep({
+  budget,
+  onBucketChange,
   onRetry,
   onSelectionChange,
   options,
+  plan,
+  remainingCents,
   research,
   selectedIds,
+  total,
 }: TransitStepProps) {
   return (
     <div>
@@ -53,6 +64,15 @@ export function TransitStep({
         </p>
       </div>
 
+      <StepBudgetControl
+        budget={budget}
+        buckets={["localTransit"]}
+        plan={plan}
+        total={total}
+        onBucketChange={onBucketChange}
+        note="Tune the getting-around share while comparing the daily approaches it buys."
+      />
+
       <ResearchNotice state={research} onRetry={onRetry} />
       {research.status === "loading" && options.length === 0 ? (
         <OptionListSkeleton />
@@ -62,6 +82,7 @@ export function TransitStep({
           description="Daily pricing is shown only to explain the complete trip total."
           emptyMessage="No local transportation options matched this trip."
           options={options}
+          remainingCents={remainingCents}
           selectedIds={selectedIds}
           onSelectionChange={onSelectionChange}
           renderDetails={(option) => <TransitDetails option={option} />}
