@@ -8,90 +8,93 @@ between each. Wave 0 is done.
 
 ---
 
-## Claude Code — Wave 1 (API lane)
+## Where the project is
 
-```
-You are the API/logic lane on PennyRat. Read AGENTS.md and docs/CONTRACT.md first.
+Both lanes have shipped their three waves. The wizard works end to end against live
+K2 research: intake, flights, activities, lodging, local transport, schedule. 319
+tests, typecheck, lint and build all clean. The UI has been rebuilt around the Penny
+Rats logo.
 
-Wave 1 deliverables:
-1. src/lib/k2/client.ts — OpenAI-compatible call to {IFM_BASE_URL}/chat/completions,
-   bearer IFM_API_KEY, model IFM_MODEL. temperature 1.0, top_p 1.0,
-   reasoning_effort 'high', max_tokens 8192, 120s timeout, 2 retries with jitter on
-   429/5xx. Log latency and token usage per call. Honor K2_MODE=live|cache|fixture.
-2. src/lib/k2/parse.ts — strip <think>/<thinking>/reasoning_content, extract the last
-   balanced JSON object or fenced block, Zod parse, drop invalid items individually,
-   one repair round-trip if nothing parsed, then normalize: de-dupe on lowercased title,
-   clamp prices over 3x the bucket, clamp absurd durations, assign prefixed ids, and
-   enforce the cross-field invariants in docs/CONTRACT.md.
-3. src/lib/k2/cache.ts — sha256(model + prompt + SCHEMA_VERSION), disk under .k2cache/
-   in dev, in-memory LRU in prod.
-4. src/lib/k2/prompts/{activities,flights,lodging}.ts — prompt A, B, C per AGENTS.md §8.
-   Flights ask for route structure and a seasonal fareBand, never exact fares.
-5. src/lib/providers/{flights,lodging,activities}.ts — turn model output into contract
-   options. Flights: fareBand + advance purchase + travelers -> costCents, estimated
-   true, and discard anything outside the intake's date window. Lodging: nightlyCents x
-   nights, enforce a tier spread.
-6. The three research routes under src/app/api/research/, replacing the 501 stubs.
-7. scripts/probe-k2.ts — report reachability, latency, whether response_format is
-   honored, whether <think> blocks appear, and token usage. Wire to npm run probe:k2.
-8. Vitest for parse.ts and the providers, against recorded responses. Never call the
-   live API from a test.
-
-Done when all three endpoints return contract-valid data in fixture mode with no API key,
-and in live mode with one. typecheck and test green.
-
-Your lane: src/lib/{k2,providers,schedule}/**, src/app/api/**, scripts/**.
-Do not touch src/components/**, src/app/** outside api/, src/lib/store/**, or the frozen
-files (src/lib/types.ts, src/lib/budget.ts, src/fixtures/**).
-Never run git. End with the HANDOFF block from AGENTS.md §12.
-```
+Test coverage is lopsided on purpose right now — about 300 tests behind the API and
+the scheduler, and a dozen in front of them. The current round evens that up.
 
 ---
 
-## Codex Plus — Wave 1 (UI lane)
+## Codex Plus — browser-side hardening
 
 ```
-You are the UI/UX lane on PennyRat. Read AGENTS.md, docs/CONTRACT.md, and
-src/lib/types.ts first. There is a note for you in docs/requests/claude-to-codex.md.
+You are the UI/UX lane on PennyRat. Read AGENTS.md, docs/CONTRACT.md and
+docs/requests/claude-to-codex.md before writing code. The last three entries in that
+request file are for you and describe this work in detail.
 
-The contract, the budget engine and the fixtures are committed and frozen. Build against
-src/fixtures — do not wait on the API lane, and do not call /api/* yet (Wave 0 stubs
-return 501).
+Context: the API lane just finished a hardening pass — 129 new tests covering K2
+failure modes, an invariant that no route can answer 5xx, and adversarial scheduler
+inputs. It found two real bugs. Your side of the fetch has almost no equivalent
+coverage: research.test.ts has 3 tests, schedule.test.ts has 2, and every one of them
+resolves a Response successfully.
 
-Wave 1 deliverables:
-1. src/lib/store/trip.ts — Zustand store persisted to localStorage: intake, budget plan,
-   fetched options, selected ids, current step. Selection is a Set of ids; derive all
-   money from applySelection.
-2. Step 1 intake: origin, destination, start and end date, travelers, total budget,
-   interests (all ten from INTERESTS), pace. Validate with tripIntakeSchema and show the
-   Zod messages. Read the budget field with parseDollarsToCents.
-3. Bucket allocation sliders over BudgetPlan, seeded by allocateBuckets, rebalanced with
-   setBucket. Show "Getting around" as its own line — the local transit budget is a
-   feature, not a detail.
-4. BudgetMeter — total remaining plus a bar per bucket, updating on every checkbox. Mark
-   over-budget buckets as a warning, not an error. When money is left, offer
-   suggestFillers.
-5. SelectableCard and OptionList — generic over TripOption: title, price via formatCents,
-   short description, an "AI estimate" badge when estimated is true, a confidence hint
-   when confidence is low, and a checkbox.
+Your tasks, in priority order:
 
-All money math comes from src/lib/budget.ts. Never sum costCents in a component, and never
-multiply nightlyCents or perDayCents — costCents is already the party total for the trip.
+C3 — the stale response race. Change the intake while research is in flight and the
+slower request can land last, overwriting fresher options. Fire research for trip A,
+then trip B, resolve A after B, and assert the store holds B. Same for /api/schedule
+when a selection changes mid-build. This is the one I would do first: the API lane's
+two bugs were both ordering bugs in code that already had tests.
 
-Done when the intake form produces a valid TripIntake, the sliders keep summing to the
-total, and checking a fixture option moves the meter. typecheck and test green.
+C1 — the network actually failing. Cover fetch rejecting (a dropped connection), a
+502 whose body is an HTML error page, and a 200 whose body is HTML. Assert the thrown
+message is readable rather than a bare "Failed to fetch" or an undefined status.
+
+C2 — cancellation. Both clients take an AbortSignal and nothing tests it. Assert the
+signal reaches fetch, that aborting rejects, and that a cancelled request writes no
+state.
+
+C4 — localStorage refusing to work. A write that throws QuotaExceededError must not
+crash the app, and a getter that throws outright (Safari private mode) must fall back
+to a fresh trip rather than an error boundary.
+
+One contract change to handle: itinerary.unscheduled can now contain flight ids, not
+only activity ids. If the itinerary view assumes otherwise, fix it. Render the reason
+strings verbatim — they are written for a traveler to read.
+
+C5 (component tests for error and empty states) needs jsdom and
+@testing-library/react. package.json belongs to the human per AGENTS.md §4 — propose
+it and wait rather than installing.
 
 Your lane: src/components/**, src/app/** except api/, src/lib/store/**, globals.css.
-Do not touch src/lib/{types,budget}.ts, src/fixtures/**, src/lib/{k2,providers,schedule}/**,
-or src/app/api/**. Need a contract change or something from the API? Append to
-docs/requests/codex-to-claude.md.
-Never run git. End with the HANDOFF block from AGENTS.md §12.
+Do not add tests under src/lib/{k2,providers,schedule} or src/app/api — the API lane
+owns those this round. Never run git. End with the HANDOFF block from AGENTS.md §12.
 ```
 
 ---
 
-## Wave 2 and 3
+## Claude Code — demo readiness
 
-Same preamble, swapping the deliverables from the table in AGENTS.md §14. Re-read
-`docs/requests/` at the start of every window — that is where the other lane left you
-things.
+```
+You are the API/logic lane on PennyRat. Read AGENTS.md and
+docs/requests/codex-to-claude.md first.
+
+Your hardening pass is done: 319 tests, two scheduler bugs found and fixed. This round
+is about the app surviving a live demo.
+
+1. The sample trip cannot be completed with live prices. The bundled Tokyo intake is
+   $4,200, but live ORD to Tokyo research returns fares of $1,900-$2,800 per party, so
+   the cheapest round trip alone is $3,900. Completing it means a hostel and four free
+   temples. Either raise the sample budget or move the sample to a shorter-haul city —
+   Mexico City at $2,600 has real headroom and demos better. src/fixtures/intake.json
+   is frozen shared state and src/fixtures/fixtures.test.ts asserts against it, so
+   whatever you change, keep that test meaningful rather than loosening it.
+
+2. docs/DEMO.md is out of date. It claims 185 tests (now 319) and predates the
+   scheduler fixes, the free-day block and the interest-tag normalisation. The "if
+   someone asks" answers are the valuable part — keep them honest and current.
+
+3. Re-warm the cache for whatever demo trips you settle on, and confirm a second
+   npm run warm comes back entirely from cache.
+
+4. Read docs/requests/codex-to-claude.md and handle anything the UI lane has filed.
+
+Your lane: src/lib/{k2,providers,schedule}/**, src/app/api/**, scripts/**, and the
+frozen fixtures with the care noted above. Do not touch src/components/** or
+src/lib/store/**. Never run git. End with the HANDOFF block from AGENTS.md §12.
+```

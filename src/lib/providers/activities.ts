@@ -1,7 +1,7 @@
 import { tripDateRange } from '../budget';
 import { fixtureActivities } from '../../fixtures';
 import { fixtureMeta, k2Configured, k2Mode, researchItems } from '../k2/client';
-import { clampInt, dedupeByTitle, slugId, truncate } from '../k2/parse';
+import { clampInt, dedupeByTitle, normalizeRating, slugId, truncate } from '../k2/parse';
 import {
   ACTIVITY_TARGET,
   activitySystem,
@@ -220,7 +220,7 @@ export function buildActivityOptions(
       category: item.category,
       neighborhood: truncate(item.neighborhood, 60),
       description: truncate(item.description, 240),
-      rating: item.rating,
+      rating: normalizeRating(item.rating),
       reviewCount: item.reviewCount,
       durationMinutes: clampInt(item.durationMinutes, 15, 720),
       openingHours,

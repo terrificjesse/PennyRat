@@ -1,7 +1,7 @@
 import { tripNights } from '../budget';
 import { fixtureLodging } from '../../fixtures';
 import { fixtureMeta, k2Configured, k2Mode, researchItems } from '../k2/client';
-import { dedupeByTitle, slugId, truncate } from '../k2/parse';
+import { dedupeByTitle, normalizeRating, slugId, truncate } from '../k2/parse';
 import {
   LODGING_TARGET,
   buildLodgingPrompt,
@@ -52,7 +52,7 @@ export function buildLodgingOptions(
       nights,
       neighborhood: truncate(item.neighborhood, 60),
       description: truncate(item.description, 240),
-      rating: item.rating,
+      rating: normalizeRating(item.rating),
       amenities: (item.amenities ?? []).slice(0, 12).map((amenity) => truncate(amenity, 40)),
       walkabilityNote: item.walkabilityNote ? truncate(item.walkabilityNote, 160) : undefined,
     };

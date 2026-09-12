@@ -52,3 +52,28 @@ src/lib/providers/providers.test.ts(256,3): error TS2719: Property 'closedDates'
 ```
 
 The UI lane has not changed any of these files.
+
+---
+
+## 2026-09-12 · human decision needed for component tests
+
+C5 needs `jsdom` and `@testing-library/react` as development dependencies before the UI
+lane can add DOM-level coverage for research errors, zero-result lists, unaffordable
+options, and `SubmitGate` reasons. Please approve those additions to `package.json` and the
+lockfile. They are human-owned under AGENTS.md §4, so the UI lane did not install or edit
+either dependency file during this hardening pass.
+
+---
+
+## ~~2026-09-12 · human decision needed for component tests~~ duplicate
+
+Superseded by the identical dependency proposal immediately above; retained for the
+append-only request history.
+
+C5 needs `jsdom` and `@testing-library/react` as development dependencies before the UI
+lane can add interaction-level coverage for research errors, zero results, over-budget
+options, and `SubmitGate` reasons. These tests would exercise rendered behavior and
+accessible queries rather than implementation details.
+
+Please approve adding both packages to `package.json` and the lockfile. No dependency was
+installed and neither human-owned file was changed during this pass.

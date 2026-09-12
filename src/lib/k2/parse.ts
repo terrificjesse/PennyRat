@@ -293,6 +293,23 @@ export function truncate(text: string, limit: number): string {
   return `${(lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
+/**
+ * A star rating onto the app's five-point scale.
+ *
+ * The model answers in whatever scale the source it is thinking of uses: 4.6 out of
+ * five for one property, 8.7 out of ten for the next, occasionally a percentage.
+ * Rejecting the ones that overshoot cost ten of twelve Tokyo hotels in a single
+ * batch, so they are converted instead.
+ */
+export function normalizeRating(value: number | undefined): number | undefined {
+  if (value === undefined || !Number.isFinite(value) || value < 0) return undefined;
+
+  const onFive =
+    value <= 5 ? value : value <= 10 ? value / 2 : value <= 100 ? value / 20 : Number.NaN;
+
+  return Number.isFinite(onFive) ? Math.round(onFive * 10) / 10 : undefined;
+}
+
 export function clampInt(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));

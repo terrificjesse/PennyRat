@@ -203,3 +203,67 @@ describe('the sample trip is actually completable', () => {
     expect(canSubmit(fixtureIntake, fixtureOptions, picks).ok).toBe(false);
   });
 });
+
+/**
+ * The sample trip has to survive a live demo, which is a harder bar than being
+ * arithmetically completable.
+ *
+ * Research prices the real world, and the real world is dearer than the bundled
+ * sample: live ORD-to-Tokyo fares came back between $1,900 and $2,800 for a party of
+ * two, making the cheapest round trip $3,900 where the fixture's cheapest is $2,330.
+ * A budget tuned to the fixtures alone leaves a demo picking a hostel and free
+ * temples. These lock in the headroom.
+ */
+describe('the sample budget stands up to live prices', () => {
+  /** The cheapest round trip live research actually returned for this pair. */
+  const OBSERVED_LIVE_ROUND_TRIP = 390_000;
+
+  const cheapest = <T extends { costCents: number }>(list: T[]) =>
+    [...list].sort((a, b) => a.costCents - b.costCents)[0];
+
+  it('covers a real round trip with room left for the rest of the trip', () => {
+    const left = fixtureIntake.budgetTotal - OBSERVED_LIVE_ROUND_TRIP;
+
+    // Enough for a mid-tier bed, local transport and a week of eating and doing.
+    expect(left).toBeGreaterThanOrEqual(150_000);
+  });
+
+  it('affords a mid-tier stay rather than only the cheapest bed', () => {
+    const byPrice = [...fixtureLodging].sort((a, b) => a.costCents - b.costCents);
+    const midTier = byPrice[Math.floor(byPrice.length / 2)];
+    const transit = cheapest(fixtureTransit);
+
+    const committed = OBSERVED_LIVE_ROUND_TRIP + midTier.costCents + transit.costCents;
+    expect(committed).toBeLessThan(fixtureIntake.budgetTotal);
+  });
+
+  it('leaves enough after flights and a bed for a proper week of doing things', () => {
+    const midTier = [...fixtureLodging].sort((a, b) => a.costCents - b.costCents)[
+      Math.floor(fixtureLodging.length / 2)
+    ];
+    const spare =
+      fixtureIntake.budgetTotal - OBSERVED_LIVE_ROUND_TRIP - midTier.costCents;
+
+    // The ten cheapest things to do, which is a full itinerary at a balanced pace.
+    const tenThings = [...fixtureActivities]
+      .sort((a, b) => a.costCents - b.costCents)
+      .slice(0, 10)
+      .reduce((acc, option) => acc + option.costCents, 0);
+
+    expect(spare).toBeGreaterThan(tenThings);
+  });
+
+  it('still cannot buy the most expensive of everything', () => {
+    const priciest = <T extends { costCents: number }>(list: T[]) =>
+      [...list].sort((a, b) => b.costCents - a.costCents)[0];
+
+    const blowout =
+      priciest(fixtureFlights.filter((f) => f.direction === 'outbound')).costCents +
+      priciest(fixtureFlights.filter((f) => f.direction === 'return')).costCents +
+      priciest(fixtureLodging).costCents;
+
+    // If this ever flips, the budget stopped forcing a choice and the demo loses
+    // the moment it is built around.
+    expect(blowout).toBeGreaterThan(fixtureIntake.budgetTotal);
+  });
+});

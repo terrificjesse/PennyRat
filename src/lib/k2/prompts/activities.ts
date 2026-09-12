@@ -27,7 +27,8 @@ export const rawActivitySchema = z.object({
   interests: z.array(z.string().max(40)).min(1).max(8),
   sensoryNotes: optionalish(z.string().max(300)),
   bestTimeOfDay: z.enum(['morning', 'afternoon', 'evening', 'any']),
-  rating: optionalish(z.number().min(0).max(5)),
+  /** Any scale — the provider maps it onto five. */
+  rating: optionalish(z.number().min(0).max(100)),
   reviewCount: optionalish(z.number().int().min(0)),
   confidence: rawConfidenceSchema,
 });

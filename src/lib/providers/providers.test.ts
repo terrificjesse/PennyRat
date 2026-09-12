@@ -549,3 +549,48 @@ describe('interest tags the model invented', () => {
     expect(options[0].interests).toEqual(['food', 'tourist']);
   });
 });
+
+/**
+ * From a live Tokyo reply that returned twelve good hotels and kept two. The model
+ * answers in whatever rating scale the source it is thinking of uses — 8.7 out of ten
+ * for one property, 4.4 out of five for the next — and the five-point cap rejected
+ * every one that overshot.
+ */
+describe('ratings on whatever scale the model felt like', () => {
+  it('halves a ten-point rating instead of dropping the property', () => {
+    const { options } = buildLodgingOptions([lodging({ rating: 8.6 })], intake);
+    expect(options).toHaveLength(1);
+    expect(options[0].rating).toBe(4.3);
+  });
+
+  it('leaves a five-point rating alone', () => {
+    const { options } = buildLodgingOptions([lodging({ rating: 4.4 })], intake);
+    expect(options[0].rating).toBe(4.4);
+  });
+
+  it('reads a percentage as a percentage', () => {
+    const { options } = buildLodgingOptions([lodging({ rating: 92 })], intake);
+    expect(options[0].rating).toBe(4.6);
+  });
+
+  it('keeps the property when the rating is nonsense, just without one', () => {
+    const { options } = buildLodgingOptions([lodging({ rating: -3 })], intake);
+    expect(options).toHaveLength(1);
+    expect(options[0].rating).toBeUndefined();
+  });
+
+  it('applies the same conversion to activities', () => {
+    const { options } = buildActivityOptions([activity({ rating: 9.2 })], intake, budget);
+    expect(options[0].rating).toBe(4.6);
+  });
+
+  it('keeps a whole batch that answered in ten-point scale', () => {
+    const batch = Array.from({ length: 12 }, (_, i) =>
+      lodging({ name: `Hotel ${i}`, rating: 7 + i * 0.2 }),
+    );
+    const { options } = buildLodgingOptions(batch, intake);
+
+    expect(options).toHaveLength(12);
+    expect(options.every((stay) => (stay.rating ?? 0) <= 5)).toBe(true);
+  });
+});

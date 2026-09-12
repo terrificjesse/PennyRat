@@ -16,7 +16,7 @@ npm run dev
 ```
 
 That works with no API key — the app ships with a complete sample trip (ORD to Tokyo,
-two travelers, $4,200) and serves it whenever research is unavailable.
+two travelers, $6,000) and serves it whenever research is unavailable.
 
 For real research, put your Institute of Foundation Models key in `.env.local`:
 
@@ -56,7 +56,7 @@ sample trip is served and the UI says where the data came from.
 
 ```bash
 npm run dev          # localhost:3000
-npm test             # 185 tests
+npm test             # 329 tests
 npm run typecheck
 npm run lint
 npm run probe:k2     # what the live endpoint actually supports

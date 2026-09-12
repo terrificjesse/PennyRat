@@ -25,24 +25,33 @@ IFM_MODEL=MBZUAI-IFM/K2-Think-v2
 K2_MODE=live
 ```
 
+Save the logo to `public/penny-rats.jpg` if it is not already there — the home screen
+falls back to a plain coin without it.
+
 ## The three trips
 
 Each one is chosen to show a different shape of problem, not a different nice city.
 
 | Trip | What it demonstrates |
 |---|---|
-| **ORD → Tokyo**, 12–17 Oct, 2 people, $4,200 | A red-eye that eats a night, and a city where half the museums shut one day a week. |
+| **ORD → Tokyo**, 12–17 Oct, 2 people, $6,000 | A red-eye that eats a night, and a city where half the museums shut one day a week. |
 | **SFO → Mexico City**, 3–8 Dec, 2 people, $2,600 | A tight budget where a $150-a-head tasting menu is a real tradeoff against three other days of eating. |
 | **JFK → Reykjavík**, 10–15 Feb, 2 people, $4,500 | The local transport budget doing actual work: a rental car costs twelve times the bus pass. |
+
+The Tokyo budget is $6,000 rather than a rounder $4,200 for a reason worth knowing if
+anyone asks: live research returns real fares, and a real ORD–Tokyo round trip for two
+is about $3,900. At $4,200 the only completable trip was a hostel and four free
+temples. `src/fixtures/fixtures.test.ts` now fails if the budget stops leaving room for
+a mid-tier stay and a full week of doing things.
 
 ## Five minutes
 
 **1 — The premise (30s).** Most trip planners show you things you cannot afford and
 let you find out at checkout. This one starts from the number and never lets you leave
-it. Type the budget first.
+it. The home screen is the logo and one button; press it and type the budget first.
 
 **2 — The budget splits itself (30s).** Six buckets, summing to exactly the total.
-Drag one and the others rebalance — it always sums to the total, never $4,199.99,
+Drag one and the others rebalance — it always sums to the total, never $5,999.99,
 because every price in the app is integer cents.
 
 Point at **Getting around**. That bucket is the reason people come home over budget,
@@ -74,8 +83,11 @@ worth slowing down for:
 - The departure day holds nothing but the flight — you are in the air.
 - The arrival day starts 90 minutes after landing, not at 9am.
 - The last day ends 150 minutes before takeoff, and check-out moves earlier to match
-  an early flight.
+  an early flight — before 8am if the flight is early enough.
 - Nothing is ever placed on a day a venue is shut.
+- Work spreads across the days rather than piling onto the front of the trip.
+- A day at the destination with nothing booked says so; a day in the air says
+  something different.
 - Anything that would not fit says why: *"only open outside the hours we plan within
   (08:00–22:00)"*, not *"no slot"*.
 
@@ -102,16 +114,45 @@ guessed. It is also the only part of the app with no variance between runs.
 **"How long does research take?"** Four to eleven seconds a call, three calls in
 parallel. Cached, it is instant — which is why we warm it before demoing.
 
+**"How do you know it works?"** 329 tests. The ones worth naming: no API route can
+answer 5xx under any malformed body; a randomised sweep of 200 selections asserts the
+schedule never overlaps itself, never breaks its contract and never places a venue
+outside its hours; and checking and unchecking fifty times returns the budget to
+exactly where it started.
+
 ## Numbers worth having ready
 
-- **185 tests**, covering budget arithmetic, model-output parsing, and the scheduler.
+- **329 tests**, across budget arithmetic, model-output parsing, the K2 client's
+  failure modes, the API contract and the scheduler.
 - **Integer cents everywhere** — check and uncheck fifty times and the remainder is
   exactly what it started at.
 - **`reasoning_effort: medium`** — measured, not guessed. Listing twelve hotels costs
   4,547 reasoning tokens at `high` and 841 at `medium`; at `high` with an 8k ceiling
   the model spent its whole budget thinking and returned nothing at all.
-- Two live bugs worth telling honestly, because both are the same lesson — never put a
-  strict schema on model output: the model writes `"rating": null` for a field it does
-  not know, which Zod's `.optional()` rejects, and it tags a hike `"outdoor"` rather
-  than `"hiking"`. Each silently emptied a whole batch. Both are now normalised in
-  code, and Reykjavík went from 10 venues with 8 warnings to 16 with none.
+- **The model id is `MBZUAI-IFM/K2-Think-v2`** — lowercase `v2`, and it matches neither
+  HuggingFace repo name. The wrong id returns a 400 that reads like an auth failure.
+
+## Bugs worth telling honestly
+
+Five found, all in code that already had passing tests, and they reduce to two
+lessons.
+
+**Never put a strict schema on model output.** Three separate times the model answered
+correctly and the schema threw the answer away:
+
+- `"rating": null` for a field it does not know — Zod's `.optional()` accepts a missing
+  key but rejects an explicit null, so one unknown rating emptied a batch of sixteen.
+- A hike tagged `"outdoor"` rather than `"hiking"` — the strict enum dropped it, and a
+  hiking trip to Iceland came back with no hiking.
+- Ratings on a ten-point scale, Booking.com style, against a five-point cap — ten of
+  twelve Tokyo hotels dropped, leaving a Stay step with two options.
+
+All three are normalised in code now rather than rejected. Reykjavík went from 10
+venues with 8 warnings to 16 with none; Tokyo lodging from 2 options to 12, out of the
+very same cached reply.
+
+**Sensible inputs hide ordering bugs.** A randomised sweep found two in the scheduler
+within one run: two selected flights could overlap, putting the traveler on two
+aircraft at once, and check-out ignored whatever was already on the day. Only
+activities and meals had been collision-aware. The 190 tests passing at the time all
+used sensible data.

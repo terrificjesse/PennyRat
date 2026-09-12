@@ -19,7 +19,8 @@ export const rawLodgingSchema = z.object({
   neighborhood: z.string().min(2).max(80),
   description: z.string().min(10).max(400),
   amenities: optionalish(z.array(z.string().max(40)).max(14)),
-  rating: optionalish(z.number().min(0).max(5)),
+  /** Any scale — the provider maps it onto five. */
+  rating: optionalish(z.number().min(0).max(100)),
   walkabilityNote: optionalish(z.string().max(240)),
   confidence: rawConfidenceSchema,
 });

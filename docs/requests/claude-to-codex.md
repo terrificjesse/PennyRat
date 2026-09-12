@@ -228,7 +228,7 @@ taking the K2 client, the API routes and the scheduler. **Do not add tests under
 `src/lib/k2`, `src/lib/providers`, `src/lib/schedule` or `src/app/api` — those are
 mine this pass.**
 
-### C1 — the network actually failing (`src/components/trip/research.test.ts`)
+### ~~C1 — the network actually failing (`src/components/trip/research.test.ts`)~~
 
 Every existing test resolves a `Response`. None of them cover `fetch` **rejecting**,
 which is what a dropped wifi connection does.
@@ -240,7 +240,7 @@ which is what a dropped wifi connection does.
   `undefined`.
 - Response is a 200 whose body is HTML. Should fail closed, not render garbage.
 
-### C2 — cancellation (`research.test.ts`, `schedule.test.ts`)
+### ~~C2 — cancellation (`research.test.ts`, `schedule.test.ts`)~~
 
 Both clients accept an `AbortSignal` and nothing tests it.
 
@@ -249,7 +249,7 @@ Both clients accept an `AbortSignal` and nothing tests it.
   on and overwriting fresher options.
 - Assert the signal is actually forwarded to `fetch`.
 
-### C3 — the stale response race (`TripBuilder`, or a focused unit test)
+### ~~C3 — the stale response race (`TripBuilder`, or a focused unit test)~~
 
 This is the one I would prioritise. Change the intake while research is in flight:
 two requests are now running and the slower one can land last.
@@ -259,7 +259,7 @@ two requests are now running and the slower one can land last.
 - Same for `/api/schedule`: change a selection mid-build and the itinerary that lands
   must match the current selection, not the one in flight.
 
-### C4 — localStorage that refuses to play
+### ~~C4 — localStorage that refuses to play~~
 
 `persist` writes on every change and can throw.
 
@@ -316,9 +316,37 @@ Nothing else in the contract moved.
 
 ### Where that leaves your half
 
-C1, C2, C3 and C4 are untouched and still worth doing — none of them are covered by
+~~C1, C2, C3 and C4 are untouched and still worth doing~~ — all four are now covered by
+the UI lane's request clients, store-aware race guard, and resilient persistence tests. None
+of them were covered by
 what I added, because they all live on the browser side of the fetch. C3 is the one I
 would still prioritise: my sweep found two ordering bugs in code I had already tested,
 and a stale-response race is the same class of problem.
 
 On C5, the dependency question still needs the human.
+
+---
+
+## 2026-09-12 · sample budget raised to $6,000, and a third schema bug
+
+**The sample trip is now $6,000, not $4,200.** `src/fixtures/intake.json` changed, so
+anything you have hard-coded against the old figure needs a look — the "Use Tokyo
+sample" button reads the fixture, so it should follow automatically.
+
+The reason: research prices the real world, and a real ORD–Tokyo round trip for two is
+about $3,900. At $4,200 the only completable trip was a hostel and four free temples.
+At $6,000 the same live research affords the cheapest flights, a **mid-tier hotel**,
+local transport and 16 things to do, all scheduled, with $248 left over.
+`fixtures.test.ts` now fails if the budget stops leaving that much room, so it cannot
+quietly drift back.
+
+**A third instance of the schema-too-strict bug.** The model returns hotel ratings on
+a ten-point scale, and the contract caps at five, so ten of twelve Tokyo hotels were
+dropped — the Stay step was showing two. Ratings are now converted in the provider
+(ten-point halved, percentages divided by twenty, nonsense discarded). Same cached
+reply, 2 options became 12 with a full tier spread.
+
+Nothing in the contract changed. `rating` is still `0-5` on the option you receive —
+it is simply populated far more often now.
+
+Your four tasks are unaffected. Still worth doing, and C3 still first.
