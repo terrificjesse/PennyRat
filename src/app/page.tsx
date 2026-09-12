@@ -1,5 +1,5 @@
-import { TripBuilder } from "@/components/trip/TripBuilder";
+import { AppShell } from "@/components/AppShell";
 
 export default function Home() {
-  return <TripBuilder />;
+  return <AppShell />;
 }

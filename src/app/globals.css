@@ -3,51 +3,58 @@
 :root {
   color-scheme: light;
 
-  /* Canvas and ink */
-  --background: #f8f4ec;
-  --foreground: #25221d;
-  --surface: #fffdf8;
-  --surface-elevated: #fff9ef;
-  --muted: #eee8dc;
-  --muted-foreground: #6d665c;
+  /* Straight off the logo: a cream coin on periwinkle, outlined in ink.
+     The periwinkle is the brand ground — the home screen and the frame around
+     things — while the working pages sit on the coin's cream, because ink on
+     cream is what long stretches of text need. */
+  --brand-deep: #4f5786;
+  --brand-deep-ink: #fdf6e2;
+  --background: #f0e2bd;
+  --foreground: #1b1915;
+  --surface: #faeecd;
+  --surface-elevated: #fdf6e2;
+  --muted: #ecdcb4;
+  --muted-foreground: #6a604a;
 
-  /* Structure */
-  --border: #ddd3c3;
-  --border-strong: #b8aa96;
+  /* Outlines are the whole look, so they are ink rather than grey. */
+  --border: #2a2721;
+  --border-strong: #14120f;
 
-  /* PennyRat's warm, confident brand pair */
-  --primary: #a84324;
-  --primary-hover: #87351d;
-  --primary-foreground: #fffaf5;
-  --primary-soft: #f6ded3;
-  --accent: #176b5a;
-  --accent-hover: #105344;
-  --accent-foreground: #f5fffb;
-  --accent-soft: #d9eee7;
+  /* The backpack, and the deep blue it sits against. */
+  --primary: #434a78;
+  --primary-hover: #333a63;
+  --primary-foreground: #fdf6e2;
+  --primary-soft: #dcdcef;
+  --accent: #c4842a;
+  --accent-hover: #a96d1d;
+  --accent-foreground: #1b1915;
+  --accent-soft: #f6dfae;
 
   /* Feedback */
-  --success: #226c55;
-  --success-soft: #dbece4;
-  --warning: #965510;
-  --warning-soft: #f7e6c7;
-  --danger: #aa3636;
-  --danger-hover: #892929;
-  --danger-foreground: #fffafa;
-  --danger-soft: #f5dede;
-  --focus: #176b5a;
+  --success: #3f7a4e;
+  --success-soft: #d9ebd5;
+  --warning: #9a6414;
+  --warning-soft: #f7e2b4;
+  --danger: #a33a2c;
+  --danger-hover: #872c20;
+  --danger-foreground: #fdf6e2;
+  --danger-soft: #f5d9cf;
+  --focus: #434a78;
 
-  /* Data visualization */
-  --bucket-flights: #a84324;
-  --bucket-lodging: #176b5a;
-  --bucket-activities: #7663a7;
-  --bucket-food: #c36a22;
-  --bucket-local-transit: #3f7294;
-  --bucket-buffer: #7a756c;
+  /* Buckets, pulled from the logo's own five colours plus the mouse's pink. */
+  --bucket-flights: #434a78;
+  --bucket-lodging: #c4842a;
+  --bucket-activities: #7b6aa8;
+  --bucket-food: #a33a2c;
+  --bucket-local-transit: #3f7a4e;
+  --bucket-buffer: #8b92a3;
 
-  --app-shadow-color: rgb(72 54 32 / 0.11);
+  --app-shadow-color: rgb(20 18 15 / 0.22);
 }
 
 @theme inline {
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-deep-ink: var(--brand-deep-ink);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
@@ -81,84 +88,88 @@
   --color-bucket-buffer: var(--bucket-buffer);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --radius-control: 0.75rem;
-  --radius-card: 1rem;
+  --radius-control: 0.875rem;
+  --radius-card: 1.25rem;
   --shadow-control: 0 1px 2px var(--app-shadow-color);
   --shadow-card: 0 1px 2px var(--app-shadow-color), 0 12px 32px -24px var(--app-shadow-color);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    color-scheme: dark;
-    --background: #171512;
-    --foreground: #f5eee3;
-    --surface: #211e1a;
-    --surface-elevated: #2a261f;
-    --muted: #312c25;
-    --muted-foreground: #b9b0a3;
-    --border: #433c32;
-    --border-strong: #685d4d;
-    --primary: #ef8b65;
-    --primary-hover: #ff9f7a;
-    --primary-foreground: #281109;
-    --primary-soft: #42261d;
-    --accent: #72c9b2;
-    --accent-hover: #8cddc6;
-    --accent-foreground: #08221c;
-    --accent-soft: #193b32;
-    --success: #79c8a9;
-    --success-soft: #1d3b31;
-    --warning: #e9ae5f;
-    --warning-soft: #402f19;
-    --danger: #f08a86;
-    --danger-hover: #ffa09c;
-    --danger-foreground: #281109;
-    --danger-soft: #432223;
-    --focus: #72c9b2;
-    --bucket-flights: #ef8b65;
-    --bucket-lodging: #72c9b2;
-    --bucket-activities: #ad9cdb;
-    --bucket-food: #e8a05c;
-    --bucket-local-transit: #79aace;
-    --bucket-buffer: #aaa298;
-    --app-shadow-color: rgb(0 0 0 / 0.3);
+  color-scheme: dark;
+  --brand-deep: #1b1f3a;
+  --brand-deep-ink: #f7e9c6;
+  --background: #23284a;
+  --foreground: #f7e9c6;
+  --surface: #333a63;
+  --surface-elevated: #3d4472;
+  --muted: #2b3157;
+  --muted-foreground: #bdb8d4;
+  --border: #12121f;
+  --border-strong: #07070d;
+  --primary: #e9c98a;
+  --primary-hover: #f4dba6;
+  --primary-foreground: #1b1915;
+  --primary-soft: #3f4674;
+  --accent: #e0a44a;
+  --accent-hover: #efb862;
+  --accent-foreground: #1b1915;
+  --accent-soft: #4a3d2c;
+  --success: #8cc79a;
+  --success-soft: #2a4033;
+  --warning: #e6b45f;
+  --warning-soft: #4a3a1c;
+  --danger: #ef9384;
+  --danger-hover: #ffab9d;
+  --danger-foreground: #24100b;
+  --danger-soft: #4a2a24;
+  --focus: #e0a44a;
+  --bucket-flights: #aab2e8;
+  --bucket-lodging: #e0a44a;
+  --bucket-activities: #b4a3e0;
+  --bucket-food: #ef9384;
+  --bucket-local-transit: #8cc79a;
+  --bucket-buffer: #9ba2b4;
+  --app-shadow-color: rgb(0 0 0 / 0.45);
   }
 }
 
 :root.dark {
   color-scheme: dark;
-  --background: #171512;
-  --foreground: #f5eee3;
-  --surface: #211e1a;
-  --surface-elevated: #2a261f;
-  --muted: #312c25;
-  --muted-foreground: #b9b0a3;
-  --border: #433c32;
-  --border-strong: #685d4d;
-  --primary: #ef8b65;
-  --primary-hover: #ff9f7a;
-  --primary-foreground: #281109;
-  --primary-soft: #42261d;
-  --accent: #72c9b2;
-  --accent-hover: #8cddc6;
-  --accent-foreground: #08221c;
-  --accent-soft: #193b32;
-  --success: #79c8a9;
-  --success-soft: #1d3b31;
-  --warning: #e9ae5f;
-  --warning-soft: #402f19;
-  --danger: #f08a86;
-  --danger-hover: #ffa09c;
-  --danger-foreground: #281109;
-  --danger-soft: #432223;
-  --focus: #72c9b2;
-  --bucket-flights: #ef8b65;
-  --bucket-lodging: #72c9b2;
-  --bucket-activities: #ad9cdb;
-  --bucket-food: #e8a05c;
-  --bucket-local-transit: #79aace;
-  --bucket-buffer: #aaa298;
-  --app-shadow-color: rgb(0 0 0 / 0.3);
+  --brand-deep: #1b1f3a;
+  --brand-deep-ink: #f7e9c6;
+  --background: #23284a;
+  --foreground: #f7e9c6;
+  --surface: #333a63;
+  --surface-elevated: #3d4472;
+  --muted: #2b3157;
+  --muted-foreground: #bdb8d4;
+  --border: #12121f;
+  --border-strong: #07070d;
+  --primary: #e9c98a;
+  --primary-hover: #f4dba6;
+  --primary-foreground: #1b1915;
+  --primary-soft: #3f4674;
+  --accent: #e0a44a;
+  --accent-hover: #efb862;
+  --accent-foreground: #1b1915;
+  --accent-soft: #4a3d2c;
+  --success: #8cc79a;
+  --success-soft: #2a4033;
+  --warning: #e6b45f;
+  --warning-soft: #4a3a1c;
+  --danger: #ef9384;
+  --danger-hover: #ffab9d;
+  --danger-foreground: #24100b;
+  --danger-soft: #4a2a24;
+  --focus: #e0a44a;
+  --bucket-flights: #aab2e8;
+  --bucket-lodging: #e0a44a;
+  --bucket-activities: #b4a3e0;
+  --bucket-food: #ef9384;
+  --bucket-local-transit: #8cc79a;
+  --bucket-buffer: #9ba2b4;
+  --app-shadow-color: rgb(0 0 0 / 0.45);
 }
 
 * {

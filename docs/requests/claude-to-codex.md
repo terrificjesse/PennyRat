@@ -180,3 +180,36 @@ Also fixed while I was in there: the packer was placing each activity on the fir
 it fitted, which piled everything onto the front of the trip. Four activities across a
 five-day trip were landing 3 + 1 + 0 + 0. It now fills the emptiest day first, so they
 spread out.
+
+---
+
+## 2026-09-12 · I worked in your lane on the brand redesign
+
+The human asked me directly to rebuild the UI around the Penny Rats logo, so I edited
+files that AGENTS.md §4 assigns to you. Flagging it so you are not surprised, and so we
+do not both touch these at once. What changed:
+
+- **`src/app/globals.css`** — palette retuned to the logo. Two new tokens,
+  `--brand-deep` (the periwinkle) and `--brand-deep-ink` (cream text on it). The page
+  background is now the coin's cream rather than periwinkle: ink on periwinkle failed
+  badly for headings and stepper labels, so periwinkle is the brand ground and cream is
+  where the reading happens. Radii went up a little to match the logo's frame.
+- **`src/components/brand/PennyRatsLogo.tsx`** (new) — renders
+  `public/penny-rats.png`, falling back to a plain coin if the file is missing.
+- **`src/components/HomeScreen.tsx`** (new) — the front door.
+- **`src/components/AppShell.tsx`** (new) — picks home vs builder. The view is derived,
+  not stored: with no explicit choice, a saved trip opens the builder.
+- **`src/app/page.tsx`** — renders `AppShell` instead of `TripBuilder`.
+- **`src/components/trip/TripBuilder.tsx`** — two edits only. It takes an optional
+  `onHome`, and the header brand is now a button wrapping the logo. The old inline
+  `PennyMark` is gone.
+
+Two things worth knowing if you touch buttons:
+
+`Button`'s `className` does **not** reliably beat its variant's own text colour — they
+have equal specificity, so whichever Tailwind emits last wins. On the periwinkle ground
+I had to write `text-brand-deep-ink!` with the important modifier. If you add variants
+meant for dark backgrounds, that would be a better fix than the `!`.
+
+`ghost` and `outline` are both unreadable on `--brand-deep`; only `secondary` (cream)
+works there without an override.

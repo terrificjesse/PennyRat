@@ -13,6 +13,7 @@ import type {
   TripIntake,
   TripOption,
 } from "@/lib/types";
+import { PennyRatsLogo } from "@/components/brand/PennyRatsLogo";
 import { BucketAllocation } from "@/components/budget/BucketAllocation";
 import { BudgetMeter } from "@/components/budget/BudgetMeter";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
@@ -70,22 +71,7 @@ function initialResearchState(): Record<OptionKind, ResearchLoadState> {
   };
 }
 
-function PennyMark() {
-  return (
-    <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-control">
-      <svg aria-hidden="true" viewBox="0 0 32 32" fill="none" className="size-6">
-        <path
-          d="M9 10.5h8.25a5.25 5.25 0 0 1 0 10.5H13v4M13 7v18"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2.5"
-        />
-        <path d="M8 15h11" stroke="currentColor" strokeLinecap="round" strokeWidth="2.5" />
-      </svg>
-    </span>
-  );
-}
+
 
 function BuilderSkeleton() {
   return (
@@ -141,7 +127,12 @@ function makeScheduleKey(
   return JSON.stringify({ intake, options, selectedIds });
 }
 
-export function TripBuilder() {
+type TripBuilderProps = {
+  /** Called when the traveler taps the logo to go back to the front door. */
+  onHome?: () => void;
+};
+
+export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   const [hydrated, setHydrated] = useState(false);
   const [research, setResearch] = useState(initialResearchState);
   const [scheduleLoad, setScheduleLoad] = useState<ScheduleLoadState>({ status: "idle" });
@@ -484,13 +475,20 @@ export function TripBuilder() {
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="no-print border-b border-border bg-surface/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <PennyMark />
-            <div>
-              <p className="text-lg font-bold tracking-[-0.03em]">PennyRat</p>
-              <p className="text-xs text-muted-foreground">Plan boldly. Spend deliberately.</p>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={onHome}
+            aria-label="Back to the Penny Rats home screen"
+            className="-m-1 flex items-center gap-3 rounded-card p-1 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            <PennyRatsLogo size={44} showWordmark={false} />
+            <span>
+              <span className="block text-lg font-bold tracking-[-0.03em]">Penny Rats</span>
+              <span className="block text-xs text-muted-foreground">
+                Plan boldly. Spend deliberately.
+              </span>
+            </span>
+          </button>
           {currentStep === WIZARD_STEPS.length - 1 ? (
             <Badge
               variant={
