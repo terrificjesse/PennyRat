@@ -21,6 +21,7 @@ import {
   activityOptionSchema,
   type ActivityCategory,
   type ActivityOption,
+  type Confidence,
   type BudgetPlan,
   type HoursWindow,
   type Interest,
@@ -185,6 +186,50 @@ function normalizeInterests(raw: string[], category: ActivityCategory): Interest
   return unique.length > 0 ? unique : [CATEGORY_INTEREST[category]];
 }
 
+const TIME_OF_DAY: Record<string, ActivityOption['bestTimeOfDay']> = {
+  morning: 'morning', am: 'morning', breakfast: 'morning', sunrise: 'morning', early: 'morning',
+  afternoon: 'afternoon', midday: 'afternoon', noon: 'afternoon', lunch: 'afternoon', day: 'afternoon',
+  evening: 'evening', night: 'evening', sunset: 'evening', dusk: 'evening', dinner: 'evening',
+  nighttime: 'evening', late: 'evening',
+  any: 'any', anytime: 'any', all_day: 'any', allday: 'any', flexible: 'any', whenever: 'any',
+};
+
+/** The model answers 'night' and 'all day' as readily as the four words we asked for. */
+function normalizeTimeOfDay(value: string): ActivityOption['bestTimeOfDay'] {
+  const key = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return TIME_OF_DAY[key] ?? 'any';
+}
+
+const CONFIDENCE: Record<string, Confidence> = {
+  low: 'low', poor: 'low', uncertain: 'low', unsure: 'low', guess: 'low',
+  medium: 'medium', moderate: 'medium', mid: 'medium', fair: 'medium', average: 'medium',
+  high: 'high', very_high: 'high', certain: 'high', confident: 'high', strong: 'high',
+};
+
+function normalizeConfidence(value: string): Confidence {
+  const key = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return CONFIDENCE[key] ?? 'medium';
+}
+
+/**
+ * Somewhere with no hours because it has no door.
+ *
+ * A plaza, a sculpture, a harbour front and a memorial are all things the model
+ * correctly reports no hours for, and dropping them cost Mexico City its Zócalo and
+ * Reykjavík its Sun Voyager. Matching on names was too brittle — "harbour" was not on
+ * the list — so this keys off the category instead.
+ *
+ * The assumed window is daytime rather than around the clock: an outdoor attraction
+ * that genuinely does have a gate is then scheduled at a sensible hour rather than at
+ * three in the morning, and it is marked low confidence either way. Anywhere with a
+ * door — a museum, a restaurant — is still dropped rather than invented.
+ */
+const ASSUMED_OPEN_CATEGORIES = new Set<ActivityCategory>(['outdoor', 'attraction']);
+
+const ASSUMED_DAYTIME: OpeningHours = Object.fromEntries(
+  DAY_KEYS.map((day) => [day, [{ open: '08:00', close: '20:00' }]]),
+) as OpeningHours;
+
 export function buildActivityOptions(
   raw: RawActivity[],
   intake: TripIntake,
@@ -203,7 +248,13 @@ export function buildActivityOptions(
   const options: ActivityOption[] = [];
 
   for (const item of unique) {
-    const openingHours = normalizeHours(item.openingHours);
+    let openingHours = normalizeHours(item.openingHours);
+    let confidence = normalizeConfidence(item.confidence);
+
+    if (!openingHours && ASSUMED_OPEN_CATEGORIES.has(item.category)) {
+      openingHours = ASSUMED_DAYTIME;
+      confidence = 'low';
+    }
     if (!openingHours) {
       warnings.push(`dropped ${item.name} (no usable opening hours)`);
       continue;
@@ -223,7 +274,7 @@ export function buildActivityOptions(
       costCents,
       costBasis: 'per_person' as const,
       estimated: true,
-      confidence: item.confidence,
+      confidence,
       category: item.category,
       neighborhood: truncate(item.neighborhood, 60),
       description: truncate(item.description, 240),
@@ -235,7 +286,7 @@ export function buildActivityOptions(
       bookingRequired: item.bookingRequired,
       interests: normalizeInterests(item.interests, item.category),
       sensoryNotes: item.sensoryNotes ? truncate(item.sensoryNotes, 200) : undefined,
-      bestTimeOfDay: item.bestTimeOfDay,
+      bestTimeOfDay: normalizeTimeOfDay(item.bestTimeOfDay),
       mapsUrl: mapsSearchUrl(item.name, item.neighborhood, intake.destination),
     };
 
@@ -279,6 +330,9 @@ export async function researchActivities(
       system: activitySystem,
       prompt: buildActivityPrompt(intake, budget),
       itemSchema: rawActivitySchema,
+      // 26 venues with a full week of opening hours each is a lot of output; the
+      // default ceiling truncated the reply and cost Mexico City twenty of them.
+      maxTokens: 32_768,
     });
 
     const { options, warnings } = buildActivityOptions(items, intake, budget);

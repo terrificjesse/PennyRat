@@ -25,6 +25,8 @@ type Intake = {
 
 type Option = {
   id: string;
+  category?: string;
+  interests?: string[];
   kind: 'flight' | 'activity' | 'lodging' | 'transit';
   title: string;
   costCents: number;
@@ -122,6 +124,8 @@ const BAR = {
   slowCallMs: 20_000,
   /** A whole day at the destination should look like a day, not a gap with lunch in it. */
   fullDayMinutes: 8 * 60,
+  /** Lunch and dinner want to be different places; that needs two a day. */
+  restaurantsPerDay: 2,
 };
 
 const baseUrl = (
@@ -229,6 +233,38 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
     );
 
     if (count < floor) problems.push(`only ${count} ${endpoint} to choose from (want ${floor}+)`);
+
+    // Research quality, not just whether the trip completes. A batch that arrives thin
+    // here is how a day ends up unfed or an interest goes unanswered.
+    if (endpoint === 'activities') {
+      const nights = Math.max(
+        1,
+        Math.round(
+          (Date.parse(trip.intake.endDate) - Date.parse(trip.intake.startDate)) / 86_400_000,
+        ),
+      );
+      const restaurants = payload.options.filter(
+        (option) => option.category === 'restaurant',
+      ).length;
+      const wanted = nights * BAR.restaurantsPerDay;
+
+      if (restaurants < wanted) {
+        problems.push(
+          `only ${restaurants} restaurants for ${nights} nights (want ${wanted}+, or days repeat)`,
+        );
+      }
+
+      const covered = new Set(payload.options.flatMap((option) => option.interests ?? []));
+      const missed = trip.intake.interests.filter((interest) => !covered.has(interest));
+      if (missed.length > 0) {
+        problems.push(`nothing came back for: ${missed.join(', ')}`);
+      }
+
+      const dropped = payload.meta.warnings.filter((w) => w.startsWith('dropped')).length;
+      if (dropped > payload.options.length / 4) {
+        problems.push(`${dropped} of the venues researched were discarded as unusable`);
+      }
+    }
 
     if (endpoint === 'flights') {
       const modes = [...new Set(payload.options.map((option) => option.mode ?? 'plane'))];
@@ -349,7 +385,10 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
   // What is worth failing on is the food reserve breaking, which shows up as hundreds
   // rather than the odd dollar of rounding.
   const overage = itinerary.overBudgetCents ?? 0;
-  const tolerated = Math.round(trip.intake.budgetTotal * 0.01);
+  // Going over is allowed by design when the traveler's own picks plus the meals they
+  // need exceed what they said. What this is guarding against is the food reserve
+  // breaking, which showed up as 6-11% of the budget rather than a few percent.
+  const tolerated = Math.round(trip.intake.budgetTotal * 0.05);
   if (overage > tolerated) {
     problems.push(`filling the days out went ${money(overage)} over budget`);
   } else if (overage > 0) {

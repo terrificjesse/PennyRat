@@ -293,6 +293,46 @@ function slug(carrier: string, legs: FlightLeg[], taken: Set<string>): string {
   return id;
 }
 
+/**
+ * Moves the bundled sample flights onto the dates actually being planned.
+ *
+ * The sample is an October trip to Tokyo. Served unshifted against a November trip to
+ * Washington it lands entirely outside the travel window, every leg gets discarded, and
+ * the schedule comes back empty — a silent, total failure that reads like a broken app
+ * rather than a fallback. Shifting the legs keeps the fallback usable for any dates.
+ */
+function rescaleFixtures(intake: TripIntake): FlightOption[] {
+  return fixtureFlights.map((flight) => {
+    const target = flight.direction === 'return' ? intake.endDate : intake.startDate;
+    const shift = epochDay(target) - epochDay(flight.legs[0].departLocal.slice(0, 10));
+
+    const move = (legs: FlightLeg[], days: number): FlightLeg[] =>
+      legs.map((leg) => ({
+        ...leg,
+        departLocal: `${addDays(leg.departLocal.slice(0, 10), days)}T${leg.departLocal.slice(11)}`,
+        arriveLocal: `${addDays(leg.arriveLocal.slice(0, 10), days)}T${leg.arriveLocal.slice(11)}`,
+      }));
+
+    const returnShift = flight.returnLegs
+      ? epochDay(intake.endDate) - epochDay(flight.returnLegs[0].departLocal.slice(0, 10))
+      : 0;
+
+    return {
+      ...flight,
+      legs: move(flight.legs, shift),
+      returnLegs: flight.returnLegs ? move(flight.returnLegs, returnShift) : undefined,
+    };
+  });
+}
+
+/** Says plainly that this is the sample trip, not the one that was asked for. */
+function sampleNote(intake: TripIntake, what: string): string {
+  return (
+    `showing the bundled Tokyo sample ${what} moved onto your dates, not real research ` +
+    `for ${intake.destination} — set IFM_API_KEY and K2_MODE=live for the real thing`
+  );
+}
+
 export async function researchFlights(
   intake: TripIntake,
 ): Promise<{ options: FlightOption[]; meta: ResearchMeta }> {
@@ -300,11 +340,8 @@ export async function researchFlights(
 
   if (k2Mode() === 'fixture' || !k2Configured()) {
     return {
-      options: fixtureFlights,
-      meta: fixtureMeta(
-        started,
-        'served the bundled ORD to Tokyo sample flights; set IFM_API_KEY and K2_MODE=live for real research',
-      ),
+      options: rescaleFixtures(intake),
+      meta: fixtureMeta(started, sampleNote(intake, 'flights')),
     };
   }
 
@@ -324,8 +361,8 @@ export async function researchFlights(
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'unknown error';
     return {
-      options: fixtureFlights,
-      meta: fixtureMeta(started, `flight research failed (${reason}); served sample data`),
+      options: rescaleFixtures(intake),
+      meta: fixtureMeta(started, `flight research failed (${reason}); ${sampleNote(intake, 'flights')}`),
     };
   }
 }

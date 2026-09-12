@@ -697,3 +697,93 @@ describe('flight entries the model shapes oddly', () => {
     expect(buildFlightOptions([empty], intake, today).options).toHaveLength(0);
   });
 });
+
+/**
+ * Three ways activities were being lost, all the same lesson: the model answers in its
+ * own vocabulary and a strict enum throws away a perfectly good venue. Mexico City lost
+ * the Zócalo; Reykjavík lost five entries to the phrase "night".
+ */
+describe('activity answers in the model\'s own words', () => {
+  it('reads night, all day and sunset as times of day', () => {
+    const cases: [string, string][] = [
+      ['night', 'evening'],
+      ['sunset', 'evening'],
+      ['all day', 'any'],
+      ['midday', 'afternoon'],
+      ['Morning', 'morning'],
+      ['whenever', 'any'],
+    ];
+
+    for (const [written, expected] of cases) {
+      const { options } = buildActivityOptions(
+        [activity({ bestTimeOfDay: written as never })],
+        intake,
+        budget,
+      );
+      expect(options[0]?.bestTimeOfDay, written).toBe(expected);
+    }
+  });
+
+  it('falls back to any rather than dropping an unknown time of day', () => {
+    const { options } = buildActivityOptions(
+      [activity({ bestTimeOfDay: 'during the blue hour' as never })],
+      intake,
+      budget,
+    );
+    expect(options).toHaveLength(1);
+    expect(options[0].bestTimeOfDay).toBe('any');
+  });
+
+  it('reads very high and moderate as confidence', () => {
+    const high = buildActivityOptions(
+      [activity({ confidence: 'very high' as never })],
+      intake,
+      budget,
+    );
+    expect(high.options[0].confidence).toBe('high');
+
+    const mid = buildActivityOptions(
+      [activity({ confidence: 'moderate' as never })],
+      intake,
+      budget,
+    );
+    expect(mid.options[0].confidence).toBe('medium');
+  });
+
+  it('keeps an open-air landmark whatever it is called', () => {
+    for (const name of ['Sun Voyager', 'Reykjavik Old Harbour', 'The National Mall']) {
+      const { options } = buildActivityOptions(
+        [activity({ name, category: 'outdoor', openingHours: {} })],
+        intake,
+        budget,
+      );
+      expect(options, name).toHaveLength(1);
+    }
+  });
+
+  it('keeps an open-air landmark that has no hours because it has no door', () => {
+    const zocalo = activity({
+      name: 'Zócalo (Plaza de la Constitución)',
+      category: 'attraction',
+      openingHours: {},
+    });
+
+    const { options } = buildActivityOptions([zocalo], intake, budget);
+    expect(options).toHaveLength(1);
+    expect(options[0].openingHours.mon).toEqual([{ open: '08:00', close: '20:00' }]);
+    // Assumed rather than researched, and it says so.
+    expect(options[0].confidence).toBe('low');
+  });
+
+  it('still drops a museum with no hours rather than inventing them', () => {
+    const museum = activity({
+      name: 'Museo Nacional de Antropología',
+      category: 'museum',
+      openingHours: {},
+    });
+
+    const { options, warnings } = buildActivityOptions([museum], intake, budget);
+    expect(options).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('no usable opening hours'))).toBe(true);
+  });
+});

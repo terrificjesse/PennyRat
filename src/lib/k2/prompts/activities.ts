@@ -26,11 +26,13 @@ export const rawActivitySchema = z.object({
   /** Free text: the model invents tags like "outdoor" and "nature". Mapped in the provider. */
   interests: z.array(z.string().max(40)).min(1).max(8),
   sensoryNotes: optionalish(z.string().max(300)),
-  bestTimeOfDay: z.enum(['morning', 'afternoon', 'evening', 'any']),
+  /** Free text: the model writes 'night', 'all day', 'sunset'. Mapped in the provider. */
+  bestTimeOfDay: z.string().max(40),
   /** Any scale — the provider maps it onto five. */
   rating: optionalish(z.number().min(0).max(100)),
   reviewCount: optionalish(z.number().int().min(0)),
-  confidence: rawConfidenceSchema,
+  /** Free text for the same reason: 'very high' and 'moderate' both turn up. */
+  confidence: z.string().max(30),
 });
 
 export type RawActivity = z.infer<typeof rawActivitySchema>;

@@ -245,11 +245,6 @@ export type SubmitCheck = {
   blockers: string[];
   /** Worth saying, never worth stopping for — the traveler may have other plans. */
   warnings: string[];
-  /**
-   * @deprecated Blockers and warnings combined, kept so the UI lane can migrate
-   * without a red build. Remove once SubmitGate reads the two lists separately.
-   */
-  reasons: string[];
 };
 
 /**
@@ -293,12 +288,7 @@ export function canSubmit(
     warnings.push('Nothing chosen to do yet. We will fill the days in for you.');
   }
 
-  return {
-    ok: blockers.length === 0,
-    blockers,
-    warnings,
-    reasons: [...blockers, ...warnings],
-  };
+  return { ok: blockers.length === 0, blockers, warnings };
 }
 
 /**

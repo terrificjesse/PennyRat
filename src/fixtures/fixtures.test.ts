@@ -197,7 +197,8 @@ describe('the sample trip is actually completable', () => {
     ].map((option) => option.id);
 
     const check = canSubmit(fixtureIntake, fixtureOptions, picks);
-    expect(check.reasons).toEqual([]);
+    expect(check.blockers).toEqual([]);
+    expect(check.warnings).toEqual([]);
     expect(check.ok).toBe(true);
 
     const state = applySelection(

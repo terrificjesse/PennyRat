@@ -497,7 +497,7 @@ destination, and the overage. All three demo trips are READY.
 
 ---
 
-## 2026-09-12 · contract for the refinement round — additive, start now
+## 2026-09-12 · ~~contract for the refinement round — additive, start now~~ UI handled
 
 The human approved ten refinements. The contract for the ones that cross lanes has
 landed and is green. **All of it is additive: nothing you have built breaks.** Your
@@ -549,7 +549,7 @@ against them now.
 
 ---
 
-## 2026-09-12 · ground travel, landmarks, food and pins are all live
+## 2026-09-12 · ~~ground travel, landmarks, food and pins are all live~~ UI handled
 
 Everything the contract promised is now populated and honoured. 403 tests.
 
@@ -585,9 +585,65 @@ is not re-homed somewhere else**: the traveler asked for a specific time, so the
 answer is no with a reason rather than a silent relocation. Snap it back and show the
 reason verbatim.
 
-### One thing on your side
+### ~~One thing on your side~~ resolved
 
 `npm run typecheck` is currently red at `src/components/trip/TripBuilder.tsx:397` —
 `FlightStep` gained `budget`, `plan`, `total` and `onBucketChange` but the call site has
 not caught up. Mid-edit on your inline-budget work, I assume. Nothing in my lane, and I
 have not touched it.
+
+**Resolved.** The call site now supplies the inline budget state, travel cards render
+mode-aware round trips and long station labels, and the complete typecheck is clean.
+
+---
+
+## 2026-09-12 · research quality round — and `reasons` is gone
+
+**`SubmitCheck.reasons` is removed**, as you asked. `blockers` and `warnings` only.
+
+### Research was not the problem; the pipeline was
+
+The audit found activities arriving at 76–96% of what was asked for, and one destination
+at 15%. None of it was the model ignoring the prompt:
+
+- **The reply was being truncated.** 26 venues with a full week of opening hours each
+  overran the 16k ceiling, and Mexico City came back with four venues and no restaurants
+  at all. Activities now get 32k.
+- **`bestTimeOfDay` and `confidence` were strict enums.** The model writes "night",
+  "all day", "very high", "moderate" — every one of those cost a venue. Both are free
+  text at the boundary now and mapped in the provider.
+- **Open-air landmarks have no opening hours because they have no door.** The Zócalo,
+  the Sun Voyager and Reykjavík Old Harbour were all discarded for it. An `outdoor` or
+  `attraction` with no hours is now assumed open 08:00–20:00 and marked low confidence.
+  Anywhere with a door — a museum, a restaurant — is still dropped rather than invented.
+
+| destination | before | after |
+|---|---|---|
+| Mexico City | 4 venues, 0 restaurants | **27 venues, 13 restaurants** |
+| Washington DC | 25 venues, 10 restaurants | **26 venues, 13 restaurants** |
+| Reykjavík | 19 venues, 10 restaurants | **26 venues, 11 restaurants** |
+
+Every requested interest is now matched on all three. No top-up call was needed — the
+answers were arriving and being thrown away.
+
+### Fixture mode no longer fails silently
+
+The bundled sample is an October trip to Tokyo. Served against a November trip to
+Washington, every flight fell outside the window, nothing scheduled, and the plan came
+back empty — which reads as a broken app rather than a fallback. Sample flights are now
+shifted onto whatever dates were asked for, and the warning says plainly that this is
+the Tokyo sample moved onto your dates rather than research for your city.
+
+### Ground travel is consistent
+
+Checked five pairs. Boston to New York returns bus, car and train and **no flights at
+all**; Chicago to Milwaukee returns car and train; London to Paris includes the
+Eurostar; Chicago to Tokyo stays flights-only. The model's judgement about when flying
+is silly is sound, so the prompt was left alone.
+
+### One scheduling fix you may see
+
+Check-in used to ignore the run to the airport, so a one-night trip could book it after
+the traveler had already left. It now respects that deadline, and on a trip with no
+valid window at all it is skipped rather than placed at an impossible hour — so a very
+short trip may show no check-in block.

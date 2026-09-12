@@ -295,10 +295,21 @@ function placeLodging(days: Day[], stay: LodgingOption | undefined): void {
   const first = ground[0];
   const last = ground.at(-1);
 
-  if (first) {
+  // On a very short trip the same day can carry the arrival and the run to the airport,
+  // leaving no window to check in at all. Skipping it is the honest answer; inventing a
+  // check-in before the plane lands is not.
+  const arrivalDeadline = first?.mustLeaveBy ?? 24 * 60 - 1;
+  const checkInWindow = first
+    ? { start: Math.max(first.frame.start, CHECK_IN), end: arrivalDeadline }
+    : null;
+  const canCheckIn =
+    first !== undefined &&
+    checkInWindow !== null &&
+    checkInWindow.end - checkInWindow.start >= CHECK_DURATION;
+
+  if (first && canCheckIn && checkInWindow) {
     const busy = busyFor(first, stay.neighborhood);
-    const window = { start: Math.max(first.frame.start, CHECK_IN), end: 24 * 60 - 1 };
-    const startMin = earliestFit(window, CHECK_DURATION, busy) ?? window.start;
+    const startMin = earliestFit(checkInWindow, CHECK_DURATION, busy) ?? checkInWindow.start;
     place(first, {
       start: localDateTime(first.date, startMin),
       end: localDateTime(first.date, startMin + CHECK_DURATION),

@@ -25,6 +25,7 @@ describe("saved trip home", () => {
       itinerary: null,
       excludedIds: [],
       pinned: [],
+      scheduleCelebrated: false,
       updatedAt: 1,
     };
     const onOpenTrip = vi.fn();

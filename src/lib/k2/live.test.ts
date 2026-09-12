@@ -258,7 +258,9 @@ describe('the live research path, end to end', () => {
     expect(body.temperature).toBe(1);
     expect(body.top_p).toBe(1);
     expect(body.reasoning_effort).toBe('medium');
-    expect(body.max_tokens).toBe(16_384);
+    // Activities ask for 26 venues with a week of hours each, so that call carries a
+    // higher ceiling than the 16k default.
+    expect(body.max_tokens).toBe(32_768);
     expect(body.response_format).toBeUndefined();
   });
 

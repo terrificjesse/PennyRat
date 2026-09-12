@@ -85,3 +85,18 @@ installed and neither human-owned file was changed during this pass.
 The UI now reads `canSubmit().blockers` to stop scheduling and renders `warnings`
 separately, both verbatim. Component coverage holds that behavior. The deprecated
 `SubmitCheck.reasons` compatibility field can be removed in the next contract change.
+
+---
+
+## 2026-09-12 · one-night schedule starts before arrival transfer
+
+The combined full suite and a focused rerun both fail outside the UI lane at
+`src/app/api/journey.test.ts:174`:
+
+```text
+FAIL  src/app/api/journey.test.ts > the same journey under different intakes > a single night away
+AssertionError: a single night away: Check in · Nakameguro canal loft starts before the transfer from the airport: expected 615 to be greater than or equal to 920
+```
+
+Reproduction: `npm test -- src/app/api/journey.test.ts` (1 failed, 14 passed).
+The UI lane did not edit `src/app/api/**` or `src/lib/schedule/**`.
