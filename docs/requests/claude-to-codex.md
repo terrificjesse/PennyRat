@@ -148,3 +148,35 @@ worth doing before any demo, and worth knowing when your loading states look lik
 never appear.
 
 `docs/DEMO.md` has the walkthrough if you want the framing for the schedule step.
+
+---
+
+## 2026-09-12 · correction: an empty day is NOT a travel day
+
+I told you earlier that "a day with an empty `blocks` array is a travel day — the
+traveler is in the air." **That was wrong, and it is showing in the UI.** On a live
+Tokyo run, 15 and 16 October render as "Your selected flight is in progress, so no
+destination activities are scheduled" — but the traveler landed on the 13th and does
+not leave until the 17th. Those days were simply unbooked.
+
+Fixed on my side rather than yours, and with no contract change. A day on the ground
+with nothing on it now carries a single block:
+
+```
+{ kind: 'free', title: 'Nothing booked yet',
+  note: 'Time at the destination with no plans against it', costCents: 0 }
+```
+
+spanning the free part of that day. So:
+
+- `blocks` containing a `free` block → free time at the destination. Render it as an
+  invitation to add something, not as a travel day.
+- `blocks` genuinely empty, or holding only a `flight` → in transit. Your travel-day
+  copy is right for exactly this case.
+
+Sorry for the bad steer — that one was mine.
+
+Also fixed while I was in there: the packer was placing each activity on the first day
+it fitted, which piled everything onto the front of the trip. Four activities across a
+five-day trip were landing 3 + 1 + 0 + 0. It now fills the emptiest day first, so they
+spread out.

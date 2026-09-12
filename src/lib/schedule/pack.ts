@@ -363,9 +363,13 @@ function placeActivities(
     let placedIt = false;
     let sawCapacity = false;
 
-    for (const day of days) {
-      if (!day.onTheGround) continue;
-      if (countActivities(day) >= cap) continue;
+    // Emptiest day first. Taking the first day that fits instead would pile
+    // everything onto the front of the trip and leave the last days bare.
+    const candidates = days
+      .filter((day) => day.onTheGround && countActivities(day) < cap)
+      .sort((a, b) => countActivities(a) - countActivities(b) || a.date.localeCompare(b.date));
+
+    for (const day of candidates) {
       sawCapacity = true;
 
       const busy = busyFor(day, activity.neighborhood);
@@ -480,6 +484,23 @@ export function buildItinerary(
     transit.reduce((acc, option) => acc + option.costCents, 0),
     ground.length,
   );
+
+  for (const day of days) {
+    if (day.onTheGround && day.placed.length === 0 && day.frame.end > day.frame.start) {
+      place(day, {
+        start: localDateTime(day.date, day.frame.start),
+        end: localDateTime(day.date, day.frame.end),
+        kind: 'free',
+        title: 'Nothing booked yet',
+        note: 'Time at the destination with no plans against it',
+        costCents: 0,
+        startMin: day.frame.start,
+        endMin: day.frame.end,
+        isMeal: false,
+        isActivity: false,
+      });
+    }
+  }
 
   let groundIndex = 0;
   const plans: DayPlan[] = days.map((day) => {
