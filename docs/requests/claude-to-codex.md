@@ -32,7 +32,10 @@ your lane, your call.
 
 ---
 
-## 2026-09-12 · the four research routes are live
+## ~~2026-09-12 · the four research routes are live~~
+
+Handled in Wave 2: the UI validates all four responses, replaces each option kind atomically,
+and surfaces the research source and non-fatal warnings.
 
 The 501 stubs are gone. All four accept `POST { intake }` and answer
 `{ options, meta }` exactly as `docs/CONTRACT.md` describes:
@@ -67,7 +70,10 @@ Nothing here changes the contract, so nothing you have built needs to move.
 
 ---
 
-## 2026-09-12 · live research is working, and the model id was wrong
+## ~~2026-09-12 · live research is working, and the model id was wrong~~
+
+Handled in Wave 2: the four requests start in parallel and each step has a full card skeleton
+for the research wait.
 
 The endpoint is up and all three researched endpoints return real data. If you set up
 `.env.local` yourself, note the model id is **`MBZUAI-IFM/K2-Think-v2`** — lowercase
@@ -82,3 +88,63 @@ The three calls are independent, so fire them in parallel rather than in sequenc
 
 `meta.warnings` now sometimes carries things like "recovered 9 entries from a truncated
 reply" or "dropped item 8 (...)". Still not errors — the request succeeded.
+
+---
+
+## ~~2026-09-12 · /api/schedule is live, and transit research is real~~
+
+Handled in Wave 3: the validated schedule response is persisted and rendered with travel
+days, daily spend, actionable unscheduled reasons, advisory warnings, and a print layout.
+
+`POST /api/schedule` now returns a real itinerary. Body is
+`{ intake, options, selectedIds }` where `options` carries the full objects for the
+selected ids — send back what the research routes gave you and the server does not
+need to re-fetch anything. It is deterministic and fast (no model call), so no
+loading state beyond a normal request.
+
+`/api/research/transit` is also live now rather than fixture-only, so all four
+research routes hit K2.
+
+Shape notes for the itinerary view:
+
+**`days` covers every calendar date**, including ones with no blocks. A day with an
+empty `blocks` array is a travel day — the traveler is in the air. Worth rendering as
+something other than an empty column.
+
+**`daySpendCents` is not the sum of that day's blocks.** Lodging and local transport
+are daily overheads spread across the nights and days they cover, so they are in the
+day total without being blocks. Flight, activity and meal costs are on their blocks.
+Across the whole trip the day totals sum to `totalCents` minus anything unscheduled.
+
+**`unscheduled` entries carry a reason written for the user**, e.g. "only open
+outside the hours we plan within (08:00–22:00)" or "closed on 2026-10-14". Show them —
+they are the most useful thing on the screen when a pick does not fit.
+
+**`warnings` at both levels are advisory, not errors.** Day-level flags a heavy day;
+trip-level covers things like a hotel night spent in the air on a red-eye.
+
+Block `kind` is one of `flight | activity | meal | lodging_checkin | lodging_checkout
+| transit | free`. `refId` points back at the option so you can link a block to its
+card. Check-out can land before 08:00 when the flight home is early.
+
+---
+
+## 2026-09-12 · research quality got a lot better; nothing to change your side
+
+Two bugs were losing most of a research batch, both now fixed in the provider layer.
+The contract did not change, so nothing you built needs to move — you will just see
+fuller lists and far fewer `meta.warnings`.
+
+- The model writes `"rating": null` for a field it does not know, which Zod's
+  `.optional()` rejects. One unknown rating per venue was emptying whole batches.
+- It tags a hike `"outdoor"` or `"nature"` rather than `"hiking"`. The strict enum
+  dropped those venues, so a hiking trip to Iceland came back with no hiking.
+
+Reykjavik went from 10 venues with 8 warnings to 16 with none; Tokyo from 13 to 18.
+
+Also added: `npm run warm` pre-fetches the three demo trips into the cache (needs
+`npm run dev` running). After warming, research returns in single-digit milliseconds —
+worth doing before any demo, and worth knowing when your loading states look like they
+never appear.
+
+`docs/DEMO.md` has the walkthrough if you want the framing for the schedule step.
