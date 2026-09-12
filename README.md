@@ -56,11 +56,12 @@ sample trip is served and the UI says where the data came from.
 
 ```bash
 npm run dev          # localhost:3000
-npm test             # 329 tests
+npm test             # 362 tests
 npm run typecheck
 npm run lint
 npm run probe:k2     # what the live endpoint actually supports
 npm run warm         # pre-fetch the demo trips into .k2cache (needs the dev server up)
+npm run rehearse     # play the demo trips end to end; non-zero if one would stumble
 ```
 
 ## Layout

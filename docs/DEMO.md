@@ -49,6 +49,7 @@ Each one is chosen to show a different shape of problem, not a different nice ci
 |---|---|
 | **ORD → Tokyo**, 12–17 Oct, 2 people, $6,000 | A red-eye that eats a night, and a city where half the museums shut one day a week. |
 | **SFO → Mexico City**, 3–8 Dec, 2 people, $2,600 | A tight budget where a $150-a-head tasting menu is a real tradeoff against three other days of eating. |
+| **Boston → Washington DC**, 5–9 Nov, 2 people, $2,800 | The trip nobody should fly: research returns driving at $240 and Amtrak at $340 against $460 for the cheapest flight. |
 | **JFK → Reykjavík**, 10–15 Feb, 2 people, $3,600 | The local transport budget doing actual work: a rental car costs twelve times the bus pass. |
 
 The Tokyo budget is $6,000 rather than a rounder $4,200 for a reason worth knowing if
@@ -74,10 +75,16 @@ because every price in the app is integer cents.
 Point at **Getting around**. That bucket is the reason people come home over budget,
 and it is held apart on purpose.
 
-**3 — Flights (45s).** Real carriers on real hubs, nonstop and connecting, filtered to
-the dates. Every price carries an **AI estimate** badge — K2 supplies the route
-structure and the seasonal fare band, and the app prices it deterministically. We are
-not pretending to have live fares, and the badge says so.
+**3 — Getting there (45s).** Real carriers on real hubs, nonstop and connecting,
+filtered to the dates, with round trips priced as one fare rather than two one-ways.
+Every price carries an **AI estimate** badge — K2 supplies the route structure and the
+seasonal fare band, and the app prices it deterministically.
+
+On Boston to Washington this is the moment worth pausing on: it returns **driving at
+$240 and Amtrak Acela at $340 against $460 for the cheapest flight**, with real station
+names. Nobody flies that route, and the app knows it. Ask it about Tokyo or Reykjavík and
+it returns flights only — it works out when the ground is an option rather than offering
+a coach to an island.
 
 **4 — Explore (60s).** This is where K2 earns its place. Named venues with opening
 hours, durations, and admission — for Mexico City it returned Pujol and Quintonil
@@ -117,6 +124,11 @@ worth slowing down for:
   something different.
 - Anything that would not fit says why: *"only open outside the hours we plan within
   (08:00–22:00)"*, not *"no slot"*.
+- Drag a block to a new time and the day re-packs around it. Drag it somewhere the venue
+  is shut and it snaps back saying so — never silently relocated, because being moved
+  without being told is worse than being refused.
+- Every place carries a map link, built from a search query rather than a coordinate the
+  model would have invented.
 
 On the Tokyo trip, point out the warning that you are paying for a hotel night you
 spend over the Pacific. Nobody asks a planner that question; the scheduler noticed.
@@ -141,7 +153,7 @@ guessed. It is also the only part of the app with no variance between runs.
 **"How long does research take?"** Four to eleven seconds a call, three calls in
 parallel. Cached, it is instant — which is why we warm it before demoing.
 
-**"How do you know it works?"** 380 tests, plus `npm run rehearse`, which plays all three demo trips through to a finished itinerary and fails if any of them would not hold up. The ones worth naming: no API route can
+**"How do you know it works?"** 403 tests, plus `npm run rehearse`, which plays all three demo trips through to a finished itinerary and fails if any of them would not hold up. The ones worth naming: no API route can
 answer 5xx under any malformed body; a randomised sweep of 200 selections asserts the
 schedule never overlaps itself, never breaks its contract and never places a venue
 outside its hours; and checking and unchecking fifty times returns the budget to
@@ -149,7 +161,7 @@ exactly where it started.
 
 ## Numbers worth having ready
 
-- **380 tests**, across budget arithmetic, model-output parsing, the K2 client's
+- **403 tests**, across budget arithmetic, model-output parsing, the K2 client's
   failure modes, the API contract and the scheduler.
 - **Integer cents everywhere** — check and uncheck fifty times and the remainder is
   exactly what it started at.
@@ -177,6 +189,12 @@ correctly and the schema threw the answer away:
 All three are normalised in code now rather than rejected. Reykjavík went from 10
 venues with 8 warnings to 16 with none; Tokyo lodging from 2 options to 12, out of the
 very same cached reply.
+
+**Two schemas describing one field is one too many.** Ground travel first came back as
+planes only. The contract had been loosened to accept station names, but the raw prompt
+schema still capped the field at four characters, so "Boston South Station" was dropped
+as malformed before anything saw it. Loosening one and not the other is invisible until
+the data that needs both shows up.
 
 **Sensible inputs hide ordering bugs.** A randomised sweep found two in the scheduler
 within one run: two selected flights could overlap, putting the traveler on two

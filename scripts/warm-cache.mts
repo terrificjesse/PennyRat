@@ -55,6 +55,20 @@ const DEMO_TRIPS: { label: string; why: string; intake: Intake }[] = [
     },
   },
   {
+    label: 'Boston → Washington DC',
+    why: 'the trip nobody should fly: rail and driving beat the plane on price and time',
+    intake: {
+      origin: 'Boston, MA',
+      destination: 'Washington DC, USA',
+      startDate: '2026-11-05',
+      endDate: '2026-11-09',
+      travelers: 2,
+      budgetTotal: 280_000,
+      interests: ['history', 'food'],
+      pace: 'balanced',
+    },
+  },
+  {
     label: 'Reykjavik',
     why: 'the trip where renting a car costs more than the hotel',
     intake: {

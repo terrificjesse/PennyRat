@@ -29,6 +29,7 @@ type Option = {
   title: string;
   costCents: number;
   direction?: 'outbound' | 'return' | 'roundtrip';
+  mode?: 'plane' | 'train' | 'bus' | 'car';
   rating?: number;
 };
 
@@ -74,6 +75,19 @@ const DEMO_TRIPS: { label: string; intake: Intake }[] = [
       travelers: 2,
       budgetTotal: 260_000,
       interests: ['food', 'art'],
+      pace: 'balanced',
+    },
+  },
+  {
+    label: 'Boston → Washington DC',
+    intake: {
+      origin: 'Boston, MA',
+      destination: 'Washington DC, USA',
+      startDate: '2026-11-05',
+      endDate: '2026-11-09',
+      travelers: 2,
+      budgetTotal: 280_000,
+      interests: ['history', 'food'],
       pace: 'balanced',
     },
   },
@@ -215,6 +229,11 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
     );
 
     if (count < floor) problems.push(`only ${count} ${endpoint} to choose from (want ${floor}+)`);
+
+    if (endpoint === 'flights') {
+      const modes = [...new Set(payload.options.map((option) => option.mode ?? 'plane'))];
+      console.log(`              ways to get there: ${modes.join(', ')}`);
+    }
     if (payload.meta.source === 'fixture') {
       notes.push(`${endpoint} served sample data, not live research`);
     }

@@ -18,6 +18,7 @@ const defaultStorage = useTripStore.persist.getOptions().storage;
 
 describe("trip store", () => {
   beforeEach(() => {
+    useTripStore.setState({ activeTripId: null, savedTrips: [] });
     useTripStore.getState().resetTrip();
   });
 
@@ -31,6 +32,70 @@ describe("trip store", () => {
     expect(useTripStore.getState().intake).toEqual(fixtureIntake);
     expect(useTripStore.getState().budgetPlan).toEqual(allocateBuckets(fixtureIntake));
     expect(useTripStore.getState().options).toEqual([]);
+    expect(useTripStore.getState().savedTrips).toHaveLength(1);
+  });
+
+  it("saves, renames, reopens, and deletes a trip", () => {
+    useTripStore.getState().setIntake(fixtureIntake);
+    useTripStore.getState().setOptions(fixtureOptions);
+    useTripStore.getState().setCurrentStep(3);
+
+    const saved = useTripStore.getState().savedTrips[0];
+    expect(saved).toMatchObject({
+      name: "Tokyo",
+      currentStep: 3,
+      intake: fixtureIntake,
+    });
+
+    useTripStore.getState().renameSavedTrip(saved.id, "Autumn in Tokyo");
+    useTripStore.getState().resetTrip();
+    expect(useTripStore.getState().savedTrips[0].name).toBe("Autumn in Tokyo");
+
+    useTripStore.getState().openSavedTrip(saved.id);
+    expect(useTripStore.getState()).toMatchObject({
+      activeTripId: saved.id,
+      currentStep: 3,
+      intake: fixtureIntake,
+    });
+
+    useTripStore.getState().deleteSavedTrip(saved.id);
+    expect(useTripStore.getState().savedTrips).toEqual([]);
+    expect(useTripStore.getState().intake).toBeNull();
+  });
+
+  it("persists itinerary edits with the active saved trip", () => {
+    const option = fixtureOptions[0];
+    const itinerary = {
+      days: [],
+      totalCents: option.costCents,
+      unscheduled: [],
+      warnings: [],
+    };
+    const pinned = [
+      { id: option.id, date: fixtureIntake.startDate, startMinutes: 9 * 60 },
+    ];
+
+    useTripStore.getState().setIntake(fixtureIntake);
+    useTripStore.getState().setOptions(fixtureOptions);
+    useTripStore.getState().applyScheduleUpdate({
+      selectedIds: [option.id],
+      excludedIds: [fixtureOptions[1].id],
+      pinned,
+      itinerary,
+    });
+
+    expect(useTripStore.getState()).toMatchObject({
+      selectedIds: [option.id],
+      excludedIds: [fixtureOptions[1].id],
+      pinned,
+      itinerary,
+    });
+    expect(useTripStore.getState().savedTrips[0]).toMatchObject({
+      selectedIds: [option.id],
+      excludedIds: [fixtureOptions[1].id],
+      pinned,
+      itinerary,
+    });
   });
 
   it("uses the shared budget helper when a bucket changes", () => {
