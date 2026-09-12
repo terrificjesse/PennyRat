@@ -11,6 +11,7 @@ export type ProgressProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   ariaLabel?: string;
   tone?: ProgressTone;
   size?: ProgressSize;
+  indicatorClassName?: string;
 };
 
 const toneClasses: Record<ProgressTone, string> = {
@@ -35,6 +36,7 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(function Progr
   {
     ariaLabel,
     className,
+    indicatorClassName,
     label,
     max = 100,
     size = "md",
@@ -67,7 +69,10 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(function Progr
         className={cx("w-full overflow-hidden rounded-full bg-muted", sizeClasses[size])}
       >
         <div
-          className={cx("h-full rounded-full transition-[width] duration-300 ease-out", toneClasses[tone])}
+          className={cx(
+            "h-full rounded-full transition-[width] duration-300 ease-out",
+            indicatorClassName ?? toneClasses[tone],
+          )}
           style={{ width: `${percentage}%` }}
         />
       </div>
