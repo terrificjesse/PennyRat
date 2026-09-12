@@ -6,6 +6,7 @@ import { applySelection, canSubmit } from "@/lib/budget";
 import { type SchedulePin, useTripStore } from "@/lib/store/trip";
 import type {
   ActivityOption,
+  Itinerary,
   LodgingOption,
   OptionKind,
   ScheduleBlock,
@@ -131,6 +132,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   const [scheduleLoad, setScheduleLoad] = useState<ScheduleLoadState>({ status: "idle" });
   const [scheduleEditError, setScheduleEditError] = useState<string>();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationRun, setCelebrationRun] = useState(0);
   const mounted = useRef(false);
   const startedFor = useRef<string | null>(null);
   const scheduleStartedFor = useRef<string | null>(null);
@@ -138,6 +140,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   const scheduleEditSequence = useRef(0);
   const stepContent = useRef<HTMLDivElement>(null);
   const lastFocusedStep = useRef<number | null>(null);
+  const celebratedItinerary = useRef<Itinerary | null>(null);
   const intake = useTripStore((state) => state.intake);
   const budgetPlan = useTripStore((state) => state.budgetPlan);
   const selectedIds = useTripStore((state) => state.selectedIds);
@@ -184,17 +187,20 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   }, [currentStep, hydrated]);
 
   useEffect(() => {
-    if (
-      !hydrated ||
-      currentStep !== WIZARD_STEPS.length - 1 ||
-      !itinerary ||
-      scheduleCelebrated
-    ) {
+    if (!hydrated) return;
+
+    if (currentStep !== WIZARD_STEPS.length - 1) {
+      celebratedItinerary.current = null;
+      setShowCelebration(false);
       return;
     }
 
+    if (!itinerary || celebratedItinerary.current === itinerary) return;
+
+    celebratedItinerary.current = itinerary;
+    setCelebrationRun((run) => run + 1);
     setShowCelebration(true);
-    markScheduleCelebrated();
+    if (!scheduleCelebrated) markScheduleCelebrated();
   }, [currentStep, hydrated, itinerary, markScheduleCelebrated, scheduleCelebrated]);
 
   const intakeKey = intakeRequestKey(intake);
@@ -308,12 +314,21 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
     () => (intake ? canSubmit(intake, options, selectedIds) : { ok: false, reasons: [] }),
     [intake, options, selectedIds],
   );
+  // Once a plan exists, the meals it added are committed money. Counting them keeps the
+  // meter agreeing with the itinerary's own total instead of claiming more is left.
+  const plannedExtraCents = itinerary?.suggestedCents ?? 0;
   const budgetState = useMemo(
     () =>
       intake && budgetPlan
-        ? applySelection(budgetPlan, intake.budgetTotal, options, selectedIds)
+        ? applySelection(
+            budgetPlan,
+            intake.budgetTotal,
+            options,
+            selectedIds,
+            plannedExtraCents,
+          )
         : null,
-    [budgetPlan, intake, options, selectedIds],
+    [budgetPlan, intake, options, selectedIds, plannedExtraCents],
   );
   const remainingCents = budgetState?.remainingTotal ?? 0;
   const scheduleKey = scheduleRequestKey(
@@ -676,6 +691,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <TripCelebration
+        key={celebrationRun}
         open={showCelebration && currentStep === WIZARD_STEPS.length - 1}
         onComplete={() => setShowCelebration(false)}
       />
@@ -687,7 +703,11 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
             aria-label="Back to the Penny Rats home screen"
             className="-m-1 flex items-center gap-3 rounded-card p-1 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
-            <PennyRatsLogo size={44} showWordmark={false} />
+            <PennyRatsLogo
+              size={60}
+              showWordmark={false}
+              className="-rotate-2 drop-shadow-[0_7px_12px_rgba(20,18,15,0.22)]"
+            />
             <span>
               <span className="block text-lg font-bold tracking-[-0.03em]">Penny Rats</span>
               <span className="block text-xs text-muted-foreground">
@@ -781,6 +801,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
             {currentStep === WIZARD_STEPS.length - 1 && (
               <div className="no-print lg:hidden">
                 <BudgetMeter
+                  plannedExtraCents={plannedExtraCents}
                   compact
                   plan={budgetPlan}
                   total={intake.budgetTotal}
@@ -810,6 +831,7 @@ export function TripBuilder({ onHome }: TripBuilderProps = {}) {
 
             <aside className="no-print hidden lg:sticky lg:top-6 lg:block">
               <BudgetMeter
+                  plannedExtraCents={plannedExtraCents}
                 plan={budgetPlan}
                 total={intake.budgetTotal}
                 options={options}

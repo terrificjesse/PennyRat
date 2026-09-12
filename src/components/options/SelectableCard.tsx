@@ -3,6 +3,7 @@
 import { formatCents } from "@/lib/budget";
 import type { ReactNode } from "react";
 import { TRAVEL_MODE_LABELS, travelMode, type TripOption } from "@/lib/types";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -66,10 +67,28 @@ export function SelectableCard({
   const mapsUrl =
     option.kind === "activity" || option.kind === "lodging" ? option.mapsUrl : undefined;
 
+  /**
+   * The whole card toggles, not just the twenty-pixel box.
+   *
+   * Anything that is itself interactive — the map link, a details control — is left
+   * alone, and a click that ends a text selection is ignored so highlighting a
+   * description does not silently add the option to the trip.
+   */
+  const toggleFromCard = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('a, button, input, select, textarea, [role="button"]')) return;
+    // A click inside the label already reaches the checkbox through htmlFor. Toggling
+    // again here would undo it, which is why cards needed two clicks to respond.
+    if (target.closest("label")) return;
+    if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+    onSelectedChange(option.id, !selected);
+  };
+
   return (
     <Card
       variant={selected ? "selected" : "default"}
-      className="h-full focus-within:ring-[3px] focus-within:ring-focus focus-within:ring-offset-2 focus-within:ring-offset-background hover:border-border-strong hover:shadow-card"
+      onClick={toggleFromCard}
+      className="h-full cursor-pointer focus-within:ring-[3px] focus-within:ring-focus focus-within:ring-offset-2 focus-within:ring-offset-background hover:border-border-strong hover:shadow-card"
     >
       <div className="flex h-full items-start gap-4">
         <Checkbox
@@ -78,7 +97,7 @@ export function SelectableCard({
           onChange={(event) => onSelectedChange(option.id, event.currentTarget.checked)}
           aria-label={`Select ${option.title}`}
           aria-describedby={descriptionId}
-          containerClassName="mt-0.5"
+          containerClassName="-m-2 mt-[-0.375rem] p-2"
         />
 
         <div className="flex min-w-0 flex-1 flex-col self-stretch">

@@ -290,12 +290,18 @@ describe('meals', () => {
     }
   });
 
-  it('sends the evening izakaya to dinner, not to breakfast', () => {
+  /**
+   * It may be seated as dinner or picked up as an evening outing — a pricey izakaya now
+   * competes with cheaper dinners for the meal budget. Either way it never lands at
+   * breakfast, because it does not open until five.
+   */
+  it('never sends the evening izakaya to breakfast', () => {
     const itinerary = plan(everything);
     const block = blockFor(itinerary, 'act_nakameguro_izakaya');
+
     if (block) {
-      expect(minutes(block.start)).toBeGreaterThanOrEqual(minutesFromClock('17:30'));
-      expect(block.title.startsWith('Dinner')).toBe(true);
+      expect(minutes(block.start)).toBeGreaterThanOrEqual(minutesFromClock('17:00'));
+      expect(block.title.startsWith('Breakfast')).toBe(false);
     }
   });
 });

@@ -81,8 +81,11 @@ bootstrap and are human-owned from that point on.
 
 Adding a dependency is a human decision — put it in a request file with the reason.
 
-Never `git checkout`, `git stash`, or revert anything. If a file you do not own is broken,
-you log it; you do not fix it.
+Never `git checkout`, `git stash`, or revert anything.
+
+The lane boundaries below were a coordination device between two agents working at once.
+With one contributor they are no longer enforced — but the frozen column still means what
+it says, because a contract change ripples through everything.
 
 ---
 
@@ -318,18 +321,16 @@ Bad: `feat(api): implement comprehensive K2 Think integration layer 🤖`
 
 ## 14. Where the work is
 
-The original three waves are long done. The lanes now run continuously, in their own
-directories, with the human committing between rounds.
+**One contributor now.** The two-lane split described in §4 is history: Codex has stopped,
+and everything in `src/` is one person's to change. The ownership table is kept because
+the reasoning behind it still holds — the contract in `types.ts` is the thing everything
+else is built on, and changing it still deserves a moment's thought and its own commit.
 
-| Lane | Owns | Currently |
-|---|---|---|
-| **Claude** | research, pricing, the planner, the routes | ground travel modes, landmark coverage, the food forecast, map URLs, pinned blocks |
-| **Codex** | the wizard, the itinerary, the store, the look | step order, inline budgeting, saved trips, editing in place, drag to reorder, the send-off |
+What the request files in `docs/requests/` record is no longer a channel between two
+agents but a log of decisions and why they were made. Worth reading before changing
+anything they describe; not worth writing to any more.
 
-A contract change lands **alone and committed** before either lane builds on it. That is
-the one hard sequencing rule; everything else is concurrent.
-
-`npm run rehearse` is the acceptance gate for a round: all three demo trips READY.
+`npm run rehearse` is the acceptance gate: all four demo trips READY.
 
 
 ## 15. Troubleshooting

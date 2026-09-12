@@ -100,3 +100,25 @@ AssertionError: a single night away: Check in · Nakameguro canal loft starts be
 
 Reproduction: `npm test -- src/app/api/journey.test.ts` (1 failed, 14 passed).
 The UI lane did not edit `src/app/api/**` or `src/lib/schedule/**`.
+
+---
+
+## 2026-09-12 · let selected activities run past 10 PM
+
+The UI now labels any activity that runs past 22:00 as **Late night** and shows the
+caveat “Runs past 10 PM. Check return transportation and the venue’s final entry time.”
+The deterministic packer still clips every destination day at `DAY_END = 22 * 60`, so a
+selected late Potomac cruise is returned unscheduled before the UI can show that treatment.
+
+Please let **selected activities** use their real opening-hours window through the end of
+the calendar day. Keep the ordinary 08:00–22:00 frame for automatic fillers, meals, and
+free-time blocks so the planner does not invent a midnight sightseeing habit. A departure
+day must still stop at `mustLeaveBy`, and a late pin should be accepted only when the venue
+is open throughout it and it does not collide with another block.
+
+Suggested scheduler coverage:
+
+- a selected 22:00–23:30 activity is placed rather than returned in `unscheduled`;
+- the same option is not added automatically as a filler after 22:00;
+- a departure deadline still refuses a selected or pinned late activity;
+- a valid 22:00 pin holds its requested slot.

@@ -440,3 +440,39 @@ describe('forecastFood', () => {
     expect(long.totalCents).toBeGreaterThan(short.totalCents);
   });
 });
+
+/**
+ * The planner puts meals on every day whether or not anybody ticked them. Leaving that
+ * out of the meter made it claim $499 was left while the itinerary showed $351 of $800
+ * planned — the same trip, two different numbers on two different screens.
+ */
+describe('money the planner committed', () => {
+  const plan = allocateBuckets(intake);
+
+  it('counts planned meals as spent', () => {
+    const picks = ['flt_out', 'lodg_a'];
+    const without = applySelection(plan, intake.budgetTotal, catalog, picks);
+    const withMeals = applySelection(plan, intake.budgetTotal, catalog, picks, 40_000);
+
+    expect(withMeals.spentTotal).toBe(without.spentTotal + 40_000);
+    expect(withMeals.remainingTotal).toBe(without.remainingTotal - 40_000);
+  });
+
+  it('bills them to food, where somebody would look for them', () => {
+    const state = applySelection(plan, intake.budgetTotal, catalog, [], 25_000);
+    expect(state.perBucket.food.spent).toBe(25_000);
+  });
+
+  it('can push the trip over on its own', () => {
+    const state = applySelection(plan, 30_000, catalog, [], 45_000);
+    expect(state.overTotal).toBe(true);
+    expect(state.remainingTotal).toBe(-15_000);
+  });
+
+  it('changes nothing when the planner has added nothing', () => {
+    const picks = ['flt_out', 'act_a'];
+    expect(applySelection(plan, intake.budgetTotal, catalog, picks, 0)).toEqual(
+      applySelection(plan, intake.budgetTotal, catalog, picks),
+    );
+  });
+});

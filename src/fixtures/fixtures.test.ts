@@ -6,9 +6,10 @@ import {
   fixtureLodging,
   fixtureOptions,
   fixtureTransit,
+  demoIntake,
 } from './index';
-import { allocateBuckets, applySelection, canSubmit, tripDateRange } from '@/lib/budget';
-import { DAY_KEYS, INTERESTS } from '@/lib/types';
+import { allocateBuckets, applySelection, canSubmit, tripDateRange, tripNights } from '@/lib/budget';
+import { DAY_KEYS, INTERESTS, tripIntakeSchema } from '@/lib/types';
 
 describe('fixture data satisfies the contract', () => {
   it('parses every file through its schema', () => {
@@ -311,5 +312,38 @@ describe('every place can be found on a map', () => {
 
   it('does not rely on coordinates, which research never fills in', () => {
     expect(fixtureActivities.every((option) => option.lat === undefined)).toBe(true);
+  });
+});
+
+/**
+ * The trip the app opens with is not the same thing as the bundled sample data. One is
+ * what we show people; the other is what we fall back to when research cannot run.
+ */
+describe('the demo trip', () => {
+  it('is a weekend, not a fortnight', () => {
+    expect(tripNights(demoIntake)).toBeLessThanOrEqual(3);
+    expect(tripNights(demoIntake)).toBeGreaterThan(0);
+  });
+
+  it('starts on a Friday and ends on a Sunday', () => {
+    const day = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay();
+    expect(day(demoIntake.startDate)).toBe(5);
+    expect(day(demoIntake.endDate)).toBe(0);
+  });
+
+  it('is a pair somebody could sensibly reach overland', () => {
+    expect(demoIntake.origin).toContain('Pittsburgh');
+    expect(demoIntake.destination).toContain('Washington');
+  });
+
+  it('has a budget that forces a choice rather than covering everything', () => {
+    // Researched live: a coach round trip runs about $240 and a mid-range room about
+    // $300 for the two nights, so this leaves a real but finite margin.
+    expect(demoIntake.budgetTotal).toBeGreaterThan(70_000);
+    expect(demoIntake.budgetTotal).toBeLessThan(150_000);
+  });
+
+  it('stays a valid intake', () => {
+    expect(tripIntakeSchema.safeParse(demoIntake).success).toBe(true);
   });
 });

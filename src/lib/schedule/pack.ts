@@ -367,6 +367,8 @@ function placeMeals(
   restaurants: ActivityOption[],
   chosen: Set<string>,
   lodgingArea: string | undefined,
+  /** What one meal was budgeted for. Ranking by rating alone overshoots it. */
+  perMealBudget: number,
 ): Set<string> {
   const usedForMainMeals = new Set<string>();
   const seated = new Set<string>();
@@ -427,6 +429,13 @@ function placeMeals(
         if (wantArea && option.neighborhood === wantArea) points += 40;
         if (!wantArea && dayAreas.has(option.neighborhood)) points += 30;
         if (scarce && usedForMainMeals.has(option.id)) points -= 25;
+
+        // The forecast that reserved this money assumed a typical restaurant, so
+        // ranking purely on rating quietly spends past it. Going over is allowed —
+        // somewhere excellent should still win — but it has to earn the difference.
+        if (perMealBudget > 0 && option.costCents > perMealBudget) {
+          points -= ((option.costCents - perMealBudget) / perMealBudget) * 30;
+        }
         if (option.bestTimeOfDay === slot.fits) points += 20;
         else if (option.bestTimeOfDay === 'any') points += 10;
 
@@ -851,6 +860,7 @@ export function buildItinerary(
       option.kind === 'activity' && !excluded.has(option.id) && !refusedPins.has(option.id),
   );
 
+  const mealBudget = forecastFood(intake, options);
   const seated = placeMeals(
     days,
     availableActivities.filter(
@@ -858,6 +868,7 @@ export function buildItinerary(
     ),
     selected,
     stays[0]?.neighborhood,
+    Math.round(mealBudget.perDayCents / mealBudget.mealsPerDay),
   );
   const { unscheduled: unplacedActivities } = placeActivities(
     days,

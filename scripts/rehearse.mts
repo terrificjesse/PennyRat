@@ -81,14 +81,14 @@ const DEMO_TRIPS: { label: string; intake: Intake }[] = [
     },
   },
   {
-    label: 'Boston → Washington DC',
+    label: 'Pittsburgh → Washington DC',
     intake: {
-      origin: 'Boston, MA',
+      origin: 'Pittsburgh, PA',
       destination: 'Washington DC, USA',
-      startDate: '2026-11-05',
-      endDate: '2026-11-09',
+      startDate: '2026-11-06',
+      endDate: '2026-11-08',
       travelers: 2,
-      budgetTotal: 280_000,
+      budgetTotal: 90_000,
       interests: ['history', 'food'],
       pace: 'balanced',
     },
@@ -102,7 +102,7 @@ const DEMO_TRIPS: { label: string; intake: Intake }[] = [
       endDate: '2027-02-15',
       travelers: 2,
       // Tight enough that the rental car has to be traded against other things.
-      budgetTotal: 360_000,
+      budgetTotal: 300_000,
       interests: ['hiking', 'food'],
       pace: 'relaxed',
     },
@@ -112,8 +112,9 @@ const DEMO_TRIPS: { label: string; intake: Intake }[] = [
 /** What a trip has to clear to be worth putting in front of people. */
 const BAR = {
   minOptionsPerKind: { flight: 4, activity: 8, lodging: 4, transit: 2 },
-  minOutings: 6,
-  minDaysWithSomethingOn: 3,
+  /** Per night away, so a weekend is judged as a weekend. */
+  minOutingsPerNight: 3,
+  minOutings: 4,
   /**
    * A trip that ends with a third of the money untouched is not demonstrating a
    * budget-first planner — it is demonstrating an unconstrained one. The tension is
@@ -172,10 +173,23 @@ function chooseBasket(options: Option[], intake: Intake): Option[] {
 
   const basket = [...fixed, bed].filter(Boolean) as Option[];
 
-  // Hold back the food line. The planner puts three meals a day on the plan, so
-  // spending every last cent on attractions guarantees going over — and no traveler
-  // budgets that way either.
-  const foodReserve = Math.round(intake.budgetTotal * 0.18);
+  // Hold back what food will actually cost, the same way the planner forecasts it:
+  // the median researched restaurant, three times a day, for every night away. A flat
+  // share of the budget under-reserved wherever eating out is dear relative to the trip.
+  const mealPrices = of('activity')
+    .filter((option) => option.category === 'restaurant')
+    .map((option) => option.costCents)
+    .sort((a, b) => a - b);
+  const medianMeal = mealPrices.length
+    ? mealPrices[Math.floor(mealPrices.length / 2)]
+    : 2_200 * intake.travelers;
+  const nightsAway = Math.max(
+    1,
+    Math.round(
+      (Date.parse(intake.endDate) - Date.parse(intake.startDate)) / 86_400_000,
+    ),
+  );
+  const foodReserve = medianMeal * 3 * nightsAway;
   let left =
     intake.budgetTotal - foodReserve - basket.reduce((acc, o) => acc + o.costCents, 0);
 
@@ -296,12 +310,6 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
     );
   }
   if (!bed) problems.push('no lodging could be afforded');
-  if (left > trip.intake.budgetTotal * BAR.maxUnspentShare) {
-    const share = Math.round((left / trip.intake.budgetTotal) * 100);
-    problems.push(
-      `${money(left)} left unspent (${share}%) — the budget is not forcing any choices`,
-    );
-  }
   const covers = (direction: 'outbound' | 'return') =>
     basket.some(
       (option) =>
@@ -384,6 +392,16 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
   // Going over at all is by design — the planner fills the day and reports the overage.
   // What is worth failing on is the food reserve breaking, which shows up as hundreds
   // rather than the odd dollar of rounding.
+  // What the finished plan leaves on the table. Measuring the basket instead counted
+  // the food reserve as unspent, when the planner was about to spend exactly that.
+  const unspent = trip.intake.budgetTotal - itinerary.totalCents;
+  if (unspent > trip.intake.budgetTotal * BAR.maxUnspentShare) {
+    const share = Math.round((unspent / trip.intake.budgetTotal) * 100);
+    problems.push(
+      `${money(unspent)} of the budget never got used (${share}%) — it is not forcing any choices`,
+    );
+  }
+
   const overage = itinerary.overBudgetCents ?? 0;
   // Going over is allowed by design when the traveler's own picks plus the meals they
   // need exceed what they said. What this is guarding against is the food reserve
@@ -395,9 +413,21 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
     notes.push(`${money(overage)} over budget after filling the days out`);
   }
 
-  if (outings < BAR.minOutings) problems.push(`only ${outings} outings scheduled (want ${BAR.minOutings}+)`);
-  if (busyDays < BAR.minDaysWithSomethingOn) {
-    problems.push(`only ${busyDays} days have anything on them (want ${BAR.minDaysWithSomethingOn}+)`);
+  const nights = Math.max(
+    1,
+    Math.round(
+      (Date.parse(trip.intake.endDate) - Date.parse(trip.intake.startDate)) / 86_400_000,
+    ),
+  );
+  const wantedOutings = Math.max(BAR.minOutings, nights * BAR.minOutingsPerNight);
+
+  if (outings < wantedOutings) {
+    problems.push(`only ${outings} outings across ${nights} nights (want ${wantedOutings}+)`);
+  }
+  // A two-night weekend has two days on the ground and a journey at each end; asking
+  // for three busy days would fail it for being short rather than for being thin.
+  if (busyDays < Math.min(3, nights)) {
+    problems.push(`only ${busyDays} of ${nights} days have anything on them`);
   }
 
   const daySum = itinerary.days.reduce((acc, day) => acc + day.daySpendCents, 0);

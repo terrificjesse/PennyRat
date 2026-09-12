@@ -30,7 +30,7 @@ export function ResearchNotice({ onRetry, state }: ResearchNoticeProps) {
       >
         <span className="size-2 shrink-0 animate-pulse rounded-full bg-accent" />
         <p className="text-sm text-muted-foreground">
-          Researching options for your dates. This can take a few seconds.
+          The rat is out looking. This can take a few seconds.
         </p>
       </div>
     );

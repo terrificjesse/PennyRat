@@ -106,7 +106,7 @@ export function ActivityStep({
         plan={plan}
         total={total}
         onBucketChange={onBucketChange}
-        note={`Plan on about ${formatCents(food.totalCents)} for ${food.mealsPerDay} meals a day across ${tripNights(intake)} days.`}
+        note={`Plan on about ${formatCents(food.perDayCents)} a day for ${food.mealsPerDay} meals — ${formatCents(food.totalCents)} across ${tripNights(intake)} days, already set aside in your budget.`}
       />
 
       <ResearchNotice state={research} onRetry={onRetry} />

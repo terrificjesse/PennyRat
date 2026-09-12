@@ -163,6 +163,12 @@ export function applySelection(
   total: Cents,
   options: readonly TripOption[],
   selectedIds: readonly string[],
+  /**
+   * Money the planner has committed that the traveler never ticked — the meals it adds
+   * to every day, mainly. It is spent either way, so leaving it out made the meter
+   * claim more was left than really was, and disagree with the itinerary's own total.
+   */
+  plannedExtraCents: Cents = 0,
 ): BudgetState {
   const selected = new Set(selectedIds);
   const spentByBucket = Object.fromEntries(BUCKET_KEYS.map((key) => [key, 0])) as Record<
@@ -175,6 +181,12 @@ export function applySelection(
     if (!selected.has(option.id)) continue;
     spentByBucket[option.bucket] += option.costCents;
     spentTotal += option.costCents;
+  }
+
+  // Planned meals land in the food bucket, which is where a traveler would look for them.
+  if (plannedExtraCents > 0) {
+    spentByBucket.food += plannedExtraCents;
+    spentTotal += plannedExtraCents;
   }
 
   const perBucket = Object.fromEntries(

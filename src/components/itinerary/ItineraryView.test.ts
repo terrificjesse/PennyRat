@@ -150,4 +150,29 @@ describe("ItineraryView edge cases", () => {
 
     for (const outing of outings) expect(markup).toContain(outing.title);
   });
+
+  it("labels an activity that runs past 10 PM with the late-night caveat", () => {
+    const markup = renderItinerary(
+      baseItinerary([
+        {
+          date: "2026-11-05",
+          blocks: [
+            {
+              start: "2026-11-05T21:45",
+              end: "2026-11-05T23:15",
+              kind: "activity",
+              title: "Moonlit river cruise",
+              costCents: 7_500,
+            },
+          ],
+          daySpendCents: 7_500,
+          warnings: [],
+        },
+      ]),
+    );
+
+    expect(markup).toContain("Late night");
+    expect(markup).toContain("Runs past 10 PM.");
+    expect(markup).toContain("Check return transportation and the venue’s final entry time.");
+  });
 });

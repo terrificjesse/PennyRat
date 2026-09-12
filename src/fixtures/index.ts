@@ -35,3 +35,23 @@ export const fixtureOptions: TripOption[] = [
   ...fixtureLodging,
   ...fixtureTransit,
 ];
+
+/**
+ * The trip the app opens with.
+ *
+ * Deliberately not the same thing as `fixtureIntake`. That one describes the bundled
+ * sample *data* — Tokyo venues, Tokyo flights — and has to keep matching it. This is
+ * the trip worth showing someone: a weekend in Washington DC, reachable by coach,
+ * train, car or plane, where the monuments and the Smithsonians cost nothing and the
+ * budget goes on getting there, a bed and eating.
+ */
+export const demoIntake: TripIntake = tripIntakeSchema.parse({
+  origin: 'Pittsburgh, PA',
+  destination: 'Washington DC, USA',
+  startDate: '2026-11-06',
+  endDate: '2026-11-08',
+  travelers: 2,
+  budgetTotal: 90_000,
+  interests: ['history', 'food'],
+  pace: 'balanced',
+});

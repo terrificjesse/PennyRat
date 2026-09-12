@@ -49,8 +49,8 @@ Each one is chosen to show a different shape of problem, not a different nice ci
 |---|---|
 | **ORD → Tokyo**, 12–17 Oct, 2 people, $6,000 | A red-eye that eats a night, and a city where half the museums shut one day a week. |
 | **SFO → Mexico City**, 3–8 Dec, 2 people, $2,600 | A tight budget where a $150-a-head tasting menu is a real tradeoff against three other days of eating. |
-| **Boston → Washington DC**, 5–9 Nov, 2 people, $2,800 | The trip nobody should fly: research returns driving at $240 and Amtrak at $340 against $460 for the cheapest flight. |
-| **JFK → Reykjavík**, 10–15 Feb, 2 people, $3,600 | The local transport budget doing actual work: a rental car costs twelve times the bus pass. |
+| **Pittsburgh → Washington DC**, 6–8 Nov, 2 people, $900 | The one to open with. A real weekend: coach, train, car and plane all come back, and the monuments and Smithsonians cost nothing, so the budget goes on getting there, a bed and eating. |
+| **JFK → Reykjavík**, 10–15 Feb, 2 people, $3,000 | The local transport budget doing actual work: a rental car costs twelve times the bus pass. |
 
 The Tokyo budget is $6,000 rather than a rounder $4,200 for a reason worth knowing if
 anyone asks: live research returns real fares, and a real ORD–Tokyo round trip for two
@@ -80,9 +80,9 @@ filtered to the dates, with round trips priced as one fare rather than two one-w
 Every price carries an **AI estimate** badge — K2 supplies the route structure and the
 seasonal fare band, and the app prices it deterministically.
 
-On Boston to Washington this is the moment worth pausing on: it returns **driving at
-$240 and Amtrak Acela at $340 against $460 for the cheapest flight**, with real station
-names. Nobody flies that route, and the app knows it. Ask it about Tokyo or Reykjavík and
+On Pittsburgh to Washington this is the moment worth pausing on: **coach, train, car and
+plane all come back**, with real station names, and the coach at around $240 return beats
+flying on both price and total time. Nobody flies that route, and the app knows it. Ask it about Tokyo or Reykjavík and
 it returns flights only — it works out when the ground is an option rather than offering
 a coach to an island.
 

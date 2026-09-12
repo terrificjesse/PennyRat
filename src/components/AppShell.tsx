@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fixtureIntake } from "@/fixtures";
+import { demoIntake } from "@/fixtures";
 import { useTripStore } from "@/lib/store/trip";
 import { PennyRatsLogo } from "@/components/brand/PennyRatsLogo";
 import { HomeScreen } from "@/components/HomeScreen";
@@ -63,7 +63,7 @@ export function AppShell() {
         }}
         onUseSample={() => {
           resetTrip();
-          setIntake(fixtureIntake);
+          setIntake(demoIntake);
           setCurrentStep(1);
           setIntent("builder");
         }}

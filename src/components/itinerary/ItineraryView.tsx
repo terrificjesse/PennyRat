@@ -63,6 +63,15 @@ function canMove(block: ScheduleBlock): boolean {
   return Boolean(block.refId && (block.kind === "activity" || block.kind === "meal"));
 }
 
+function isLateNight(block: ScheduleBlock): boolean {
+  if (block.kind !== "activity") return false;
+  return (
+    block.end.slice(0, 10) > block.start.slice(0, 10) ||
+    startMinutes(block.start) >= 22 * 60 ||
+    startMinutes(block.end) > 22 * 60
+  );
+}
+
 function DayBlock({
   block,
   date,
@@ -92,6 +101,7 @@ function DayBlock({
   const refId = block.refId;
   const movable = canMove(block) && Boolean(onMoveBlock);
   const mapsUrl = mapUrl(option);
+  const lateNight = isLateNight(block);
 
   const handleDragStart = (event: DragEvent<HTMLLIElement>) => {
     if (!movable || !refId) return;
@@ -131,12 +141,18 @@ function DayBlock({
               {blockLabels[block.kind]}
             </p>
             {block.suggested && <Badge variant="estimate">Suggested</Badge>}
+            {lateNight && <Badge variant="warning">Late night</Badge>}
             {movable && <Badge variant="neutral">Drag to move</Badge>}
           </div>
           <h3 className="mt-1 font-semibold text-foreground">{block.title}</h3>
           {block.note && (
             <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
               {block.note}
+            </p>
+          )}
+          {lateNight && (
+            <p className="mt-2 max-w-2xl rounded-control border border-warning/40 bg-warning-soft px-3 py-2 text-sm leading-6 text-warning">
+              <span className="font-semibold">Late-night plan:</span> Runs past 10 PM. Check return transportation and the venue’s final entry time.
             </p>
           )}
           {mapsUrl && (
@@ -220,6 +236,84 @@ function DayBlock({
   );
 }
 
+/**
+ * What the planner spent feeding the traveler.
+ *
+ * Meals go onto every day whether or not anybody ticked them, so the money is real and
+ * has to be visible rather than buried in a total. Shown per day because that is how
+ * people think about eating — "about thirty dollars a day" lands where "$438 across the
+ * trip" does not — and removable, because somebody with a kitchen or a plan to eat with
+ * friends should be able to take it back out.
+ */
+function PlannedFood({
+  itinerary,
+  onRemoveSuggestion,
+}: {
+  itinerary: Itinerary;
+  onRemoveSuggestion?: (block: ScheduleBlock) => void;
+}) {
+  const meals = itinerary.days.flatMap((day) =>
+    day.blocks
+      .filter((block) => block.kind === "meal" && block.suggested)
+      .map((block) => ({ block, date: day.date })),
+  );
+
+  if (meals.length === 0) return null;
+
+  const total = meals.reduce((sum, entry) => sum + entry.block.costCents, 0);
+  const daysWithFood = new Set(meals.map((entry) => entry.date)).size;
+  const perDay = daysWithFood > 0 ? Math.round(total / daysWithFood) : 0;
+
+  return (
+    <section
+      className="mt-6 rounded-card border-2 border-border-strong bg-surface-elevated p-5"
+      aria-labelledby="planned-food-title"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2
+            id="planned-food-title"
+            className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+          >
+            Meals we planned in
+          </h2>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
+            about {formatCents(perDay)} a day
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {formatCents(total)} across {daysWithFood} {daysWithFood === 1 ? "day" : "days"},
+            counted in your budget. Remove any you would rather sort out yourself.
+          </p>
+        </div>
+        <Badge variant="estimate">Counted in your total</Badge>
+      </div>
+
+      <ul className="mt-4 divide-y divide-border border-t border-border">
+        {meals.map(({ block, date }) => (
+          <li
+            key={`${date}-${block.refId ?? block.title}`}
+            className="flex flex-wrap items-center justify-between gap-3 py-2.5"
+          >
+            <span className="min-w-0 text-sm text-foreground">
+              <span className="text-muted-foreground">{date.slice(5)}</span> · {block.title}
+            </span>
+            <span className="flex items-center gap-3">
+              <span className="text-sm font-semibold tabular-nums text-foreground">
+                {formatCents(block.costCents)}
+              </span>
+              {onRemoveSuggestion && block.refId && (
+                <Button size="sm" variant="ghost" onClick={() => onRemoveSuggestion(block)}>
+                  Remove
+                </Button>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function ItineraryView({
   editing = false,
   intake,
@@ -236,19 +330,21 @@ export function ItineraryView({
   return (
     <article className="print-itinerary" aria-labelledby="itinerary-title">
       <Card variant="raised" padding="lg" className="print:border-0 print:p-0 print:shadow-none">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <Badge variant={overBudget ? "danger" : "success"}>
-              {overBudget
-                ? `${formatCents(itinerary.overBudgetCents ?? 0)} over budget`
-                : "Within budget"}
-            </Badge>
-            <h1 id="itinerary-title" className="mt-3 text-3xl font-bold tracking-[-0.04em] text-foreground sm:text-4xl">
-              {intake.destination}, day by day
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {intake.origin} → {intake.destination} · {intake.startDate} to {intake.endDate}
-            </p>
+        <div className="flex flex-wrap items-start justify-between gap-5 border-b border-border pb-6">
+          <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-5">
+            <div className="min-w-0">
+              <Badge variant={overBudget ? "danger" : "success"}>
+                {overBudget
+                  ? `${formatCents(itinerary.overBudgetCents ?? 0)} over budget`
+                  : "Within budget"}
+              </Badge>
+              <h1 id="itinerary-title" className="mt-3 text-3xl font-bold tracking-[-0.04em] text-foreground sm:text-4xl">
+                {intake.destination}, day by day
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {intake.origin} → {intake.destination} · {intake.startDate} to {intake.endDate}
+              </p>
+            </div>
           </div>
           <div className="text-right">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Planned total</p>
@@ -260,6 +356,8 @@ export function ItineraryView({
             )}
           </div>
         </div>
+
+        <PlannedFood itinerary={itinerary} onRemoveSuggestion={onRemoveSuggestion} />
 
         {itinerary.warnings.length > 0 && (
           <div className="mt-6 rounded-control border border-warning/40 bg-warning-soft p-4">

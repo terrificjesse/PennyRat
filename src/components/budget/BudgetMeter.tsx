@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { PennyRatsLogo } from "@/components/brand/PennyRatsLogo";
 import { applySelection, formatCents } from "@/lib/budget";
 import {
   BUCKET_KEYS,
@@ -19,6 +20,8 @@ type BudgetMeterProps = {
   selectedIds: readonly string[];
   className?: string;
   compact?: boolean;
+  /** Meals the planner committed that nobody ticked. Spent money either way. */
+  plannedExtraCents?: Cents;
 };
 
 const indicatorClasses: Record<BucketKey, string> = {
@@ -35,10 +38,11 @@ export function BudgetMeter({
   compact = false,
   options,
   plan,
+  plannedExtraCents = 0,
   selectedIds,
   total,
 }: BudgetMeterProps) {
-  const budget = applySelection(plan, total, options, selectedIds);
+  const budget = applySelection(plan, total, options, selectedIds, plannedExtraCents);
   const titleId = useId();
   const totalValueText = `${formatCents(budget.spentTotal)} selected of ${formatCents(total)}.${
     budget.overTotal ? " Over budget." : ` ${formatCents(budget.remainingTotal)} left.`
@@ -79,9 +83,15 @@ export function BudgetMeter({
       className={`${budget.overTotal ? "border-danger/60" : ""} ${className ?? ""}`}
       aria-labelledby={titleId}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Live trip budget
-      </p>
+      <div className="flex items-center gap-3">
+        <PennyRatsLogo size={compact ? 40 : 46} showWordmark={false} className="shrink-0" />
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Penny Rats
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-foreground">Live trip budget</p>
+        </div>
+      </div>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 id={titleId} className="text-sm font-semibold text-muted-foreground">

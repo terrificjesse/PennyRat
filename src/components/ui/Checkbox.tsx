@@ -78,7 +78,20 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   );
 
   if (!hasLabel && !hasDescription && !hasError) {
-    return <span className={cx("inline-flex", containerClassName)}>{control}</span>;
+    // A label-less checkbox is still a real target: the padding gives it a comfortable
+    // touch area without changing where the box appears.
+    return (
+      <label
+        htmlFor={inputId}
+        className={cx(
+          "inline-flex cursor-pointer items-start",
+          disabled && "cursor-not-allowed opacity-55",
+          containerClassName,
+        )}
+      >
+        {control}
+      </label>
+    );
   }
 
   return (

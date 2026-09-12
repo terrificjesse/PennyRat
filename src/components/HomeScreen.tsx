@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { fixtureIntake } from "@/fixtures";
+import { demoIntake } from "@/fixtures";
 import { formatCents } from "@/lib/budget";
 import type { SavedTrip } from "@/lib/store/trip";
 import { PennyRatsLogo } from "@/components/brand/PennyRatsLogo";
@@ -58,12 +58,12 @@ export function HomeScreen({
   return (
     <div className="min-h-dvh bg-brand-deep text-brand-deep-ink">
       <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-        <header className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <header className="flex flex-col items-center text-center sm:text-left lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-5">
             <PennyRatsLogo
-              size={112}
+              size={152}
               priority
-              className="-rotate-1 drop-shadow-[0_12px_24px_rgba(10,10,20,0.35)]"
+              className="-rotate-2 drop-shadow-[0_16px_28px_rgba(10,10,20,0.38)]"
             />
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-deep-ink/70">
@@ -78,7 +78,7 @@ export function HomeScreen({
             </div>
           </div>
 
-          <Button size="lg" variant="secondary" onClick={onStart} className="mt-6 sm:mt-0">
+          <Button size="lg" variant="secondary" onClick={onStart} className="mt-6 lg:mt-0">
             Plan a new trip
           </Button>
         </header>
@@ -99,7 +99,7 @@ export function HomeScreen({
               onClick={onUseSample}
               className="border border-brand-deep-ink/40 text-brand-deep-ink! hover:bg-white/10"
             >
-              Try {fixtureIntake.destination.split(",")[0]} for {formatCents(fixtureIntake.budgetTotal)}
+              Try a weekend in {demoIntake.destination.split(",")[0]} for {formatCents(demoIntake.budgetTotal)}
             </Button>
           </div>
 

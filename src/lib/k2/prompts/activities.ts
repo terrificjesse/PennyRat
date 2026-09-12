@@ -6,7 +6,6 @@ import {
   optionalish,
   describeParty,
   describeTripDates,
-  rawConfidenceSchema,
   rawOpeningHoursSchema,
   usd,
 } from './common';
