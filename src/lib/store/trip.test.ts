@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { fixtureFlights, fixtureIntake, fixtureOptions } from "@/fixtures";
+import {
+  fixtureFlights,
+  fixtureIntake,
+  fixtureOptions,
+  fixtureTransit,
+} from "@/fixtures";
 import { allocateBuckets, setBucket } from "@/lib/budget";
 import { FIRST_TRIP_STEP, LAST_TRIP_STEP, useTripStore } from "./trip";
 
@@ -13,6 +18,7 @@ describe("trip store", () => {
 
     expect(useTripStore.getState().intake).toEqual(fixtureIntake);
     expect(useTripStore.getState().budgetPlan).toEqual(allocateBuckets(fixtureIntake));
+    expect(useTripStore.getState().options).toEqual([]);
   });
 
   it("uses the shared budget helper when a bucket changes", () => {
@@ -52,6 +58,49 @@ describe("trip store", () => {
     expect(useTripStore.getState().selectedIds).toEqual([retainedId]);
   });
 
+  it("replaces one option kind without losing concurrent research results", () => {
+    useTripStore.getState().setOptions(fixtureFlights);
+    useTripStore.getState().setOptionsForKind("transit", fixtureTransit);
+
+    expect(useTripStore.getState().options).toEqual([
+      ...fixtureFlights,
+      ...fixtureTransit,
+    ]);
+  });
+
+  it("rejects options that do not match the requested kind", () => {
+    expect(() =>
+      useTripStore.getState().setOptionsForKind("flight", fixtureTransit),
+    ).toThrow("Expected only flight options.");
+  });
+
+  it("validates a schedule and invalidates it when a choice changes", () => {
+    const itinerary = {
+      days: [],
+      totalCents: 0,
+      unscheduled: [],
+      warnings: [],
+    };
+    useTripStore.getState().setItinerary(itinerary);
+
+    expect(useTripStore.getState().itinerary).toEqual(itinerary);
+    useTripStore.getState().toggleOption(fixtureOptions[0].id, true);
+    expect(useTripStore.getState().itinerary).toBeNull();
+  });
+
+  it("keeps a built itinerary when refreshed research is unchanged", () => {
+    const itinerary = {
+      days: [],
+      totalCents: 0,
+      unscheduled: [],
+      warnings: [],
+    };
+    useTripStore.getState().setItinerary(itinerary);
+    useTripStore.getState().setOptionsForKind("flight", fixtureFlights);
+
+    expect(useTripStore.getState().itinerary).toEqual(itinerary);
+  });
+
   it("clamps navigation to the wizard bounds", () => {
     useTripStore.getState().setCurrentStep(-4);
     expect(useTripStore.getState().currentStep).toBe(FIRST_TRIP_STEP);
@@ -65,5 +114,62 @@ describe("trip store", () => {
     const currentState = useTripStore.getState();
 
     expect(merge?.({ intake: { budgetTotal: "4200" } }, currentState)).toBe(currentState);
+  });
+
+  it("repairs a missing persisted plan with the shared allocator", () => {
+    const merge = useTripStore.persist.getOptions().merge;
+    const merged = merge?.(
+      {
+        intake: fixtureIntake,
+        budgetPlan: null,
+        selectedIds: [],
+        options: fixtureOptions,
+        currentStep: 2,
+        itinerary: null,
+      },
+      useTripStore.getState(),
+    );
+
+    expect(merged?.budgetPlan).toEqual(allocateBuckets(fixtureIntake));
+    expect(merged?.currentStep).toBe(2);
+  });
+
+  it("hydrates pre-itinerary persisted state", () => {
+    const merge = useTripStore.persist.getOptions().merge;
+    const merged = merge?.(
+      {
+        intake: fixtureIntake,
+        budgetPlan: allocateBuckets(fixtureIntake),
+        selectedIds: [],
+        options: fixtureOptions,
+        currentStep: 1,
+      },
+      useTripStore.getState(),
+    );
+
+    expect(merged?.itinerary).toBeNull();
+  });
+
+  it("drops a persisted itinerary when one of its selections is missing", () => {
+    const merge = useTripStore.persist.getOptions().merge;
+    const merged = merge?.(
+      {
+        intake: fixtureIntake,
+        budgetPlan: allocateBuckets(fixtureIntake),
+        selectedIds: [fixtureFlights[0].id, "missing_option"],
+        options: fixtureOptions,
+        currentStep: 5,
+        itinerary: {
+          days: [],
+          totalCents: 0,
+          unscheduled: [],
+          warnings: [],
+        },
+      },
+      useTripStore.getState(),
+    );
+
+    expect(merged?.selectedIds).toEqual([fixtureFlights[0].id]);
+    expect(merged?.itinerary).toBeNull();
   });
 });

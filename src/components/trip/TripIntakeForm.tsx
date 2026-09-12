@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { formatCents, parseDollarsToCents } from "@/lib/budget";
 import {
   INTERESTS,
@@ -60,6 +60,17 @@ const FIELD_MESSAGES: Record<keyof TripIntake, string> = {
   pace: "Choose a travel pace.",
 };
 
+const FIELD_FOCUS_SELECTORS: Record<keyof TripIntake, string> = {
+  origin: "#trip-origin",
+  destination: "#trip-destination",
+  startDate: "#trip-start",
+  endDate: "#trip-end",
+  travelers: "#trip-travelers",
+  budgetTotal: "#trip-budget",
+  interests: "#trip-interests input",
+  pace: "#trip-pace input",
+};
+
 const inputClasses =
   "min-h-11 w-full rounded-control border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-foreground shadow-control outline-none transition placeholder:text-muted-foreground/70 focus:border-accent focus:ring-[3px] focus:ring-focus/20 aria-invalid:border-danger aria-invalid:ring-danger/15";
 
@@ -99,6 +110,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 export function TripIntakeForm({ initialValue, onSubmit }: TripIntakeFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<FormValues>(() => formValues(initialValue));
   const [errors, setErrors] = useState<IntakeErrors>({});
 
@@ -127,32 +139,35 @@ export function TripIntakeForm({ initialValue, onSubmit }: TripIntakeFormProps) 
     event.preventDefault();
     const budgetTotal = parseDollarsToCents(values.budget);
 
-    if (budgetTotal === null) {
-      setErrors((current) => ({ ...current, budgetTotal: FIELD_MESSAGES.budgetTotal }));
-      return;
-    }
-
     const parsed = tripIntakeSchema.safeParse({
       origin: values.origin.trim(),
       destination: values.destination.trim(),
       startDate: values.startDate,
       endDate: values.endDate,
       travelers: Number(values.travelers),
-      budgetTotal,
+      budgetTotal: budgetTotal ?? -1,
       interests: values.interests,
       pace: values.pace,
     });
 
     if (!parsed.success) {
       const nextErrors: IntakeErrors = {};
+      let firstError: keyof TripIntake | undefined;
       for (const issue of parsed.error.issues) {
         const field = issue.path[0];
         if (typeof field === "string" && field in FIELD_MESSAGES) {
           const knownField = field as keyof TripIntake;
           nextErrors[knownField] ??= FIELD_MESSAGES[knownField];
+          firstError ??= knownField;
         }
       }
       setErrors(nextErrors);
+      if (firstError) {
+        const selector = FIELD_FOCUS_SELECTORS[firstError];
+        requestAnimationFrame(() => {
+          formRef.current?.querySelector<HTMLElement>(selector)?.focus();
+        });
+      }
       return;
     }
 
@@ -163,7 +178,7 @@ export function TripIntakeForm({ initialValue, onSubmit }: TripIntakeFormProps) 
   const hasErrors = Object.values(errors).some(Boolean);
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="space-y-7">
+    <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-7">
       {hasErrors && (
         <div role="alert" className="rounded-control border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger">
           Check the highlighted details before building your budget.
@@ -284,7 +299,11 @@ export function TripIntakeForm({ initialValue, onSubmit }: TripIntakeFormProps) 
         </div>
       </div>
 
-      <fieldset>
+      <fieldset
+        id="trip-interests"
+        aria-invalid={Boolean(errors.interests)}
+        aria-describedby={errors.interests ? "trip-interests-error" : undefined}
+      >
         <legend className="text-sm font-semibold text-foreground">What matters to you?</legend>
         <p className="mt-1 text-sm text-muted-foreground">Choose at least one. We’ll use these to shape the shortlist.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -301,7 +320,11 @@ export function TripIntakeForm({ initialValue, onSubmit }: TripIntakeFormProps) 
         <FieldError id="trip-interests-error" message={errors.interests} />
       </fieldset>
 
-      <fieldset>
+      <fieldset
+        id="trip-pace"
+        aria-invalid={Boolean(errors.pace)}
+        aria-describedby={errors.pace ? "trip-pace-error" : undefined}
+      >
         <legend className="text-sm font-semibold text-foreground">Travel pace</legend>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {PACE_OPTIONS.map((option) => (

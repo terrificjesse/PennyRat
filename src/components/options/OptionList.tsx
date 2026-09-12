@@ -1,33 +1,37 @@
 "use client";
 
+import { useId, type ReactNode } from "react";
 import type { TripOption } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { SelectableCard } from "./SelectableCard";
 
-type OptionListProps = {
-  options: readonly TripOption[];
+type OptionListProps<TOption extends TripOption> = {
+  options: readonly TOption[];
   selectedIds: readonly string[];
   onSelectionChange: (id: string, selected: boolean) => void;
+  renderDetails?: (option: TOption) => ReactNode;
   title: string;
   description?: string;
   emptyMessage?: string;
 };
 
-export function OptionList({
+export function OptionList<TOption extends TripOption>({
   description,
   emptyMessage = "No options match this part of the trip yet.",
   onSelectionChange,
   options,
+  renderDetails,
   selectedIds,
   title,
-}: OptionListProps) {
+}: OptionListProps<TOption>) {
   const selected = new Set(selectedIds);
+  const titleId = useId();
 
   return (
-    <section aria-labelledby="option-list-title">
+    <section aria-labelledby={titleId}>
       <div className="mb-5">
         <h2
-          id="option-list-title"
+          id={titleId}
           className="text-2xl font-semibold tracking-[-0.03em] text-foreground"
         >
           {title}
@@ -47,6 +51,7 @@ export function OptionList({
                 option={option}
                 selected={selected.has(option.id)}
                 onSelectedChange={onSelectionChange}
+                details={renderDetails?.(option)}
               />
             </li>
           ))}

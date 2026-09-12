@@ -1,6 +1,7 @@
 "use client";
 
 import { formatCents } from "@/lib/budget";
+import type { ReactNode } from "react";
 import type { TripOption } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -10,6 +11,7 @@ type SelectableCardProps = {
   option: TripOption;
   selected: boolean;
   onSelectedChange: (id: string, selected: boolean) => void;
+  details?: ReactNode;
 };
 
 function optionDescription(option: TripOption): string {
@@ -47,6 +49,7 @@ function optionEyebrow(option: TripOption): string {
 }
 
 export function SelectableCard({
+  details,
   onSelectedChange,
   option,
   selected,
@@ -93,6 +96,12 @@ export function SelectableCard({
             <p id={descriptionId} className="mt-2 text-sm leading-6 text-muted-foreground">
               {optionDescription(option)}
             </p>
+
+            {details && (
+              <div className="mt-4 border-t border-border pt-4 text-sm text-muted-foreground">
+                {details}
+              </div>
+            )}
           </div>
         </div>
       </Card>

@@ -7,11 +7,13 @@ import { fixtureOptions } from "@/fixtures";
 import { allocateBuckets, setBucket } from "@/lib/budget";
 import {
   budgetPlanSchema,
+  itinerarySchema,
   tripIntakeSchema,
   tripOptionSchema,
   type BucketKey,
   type BudgetPlan,
   type Cents,
+  type Itinerary,
   type TripIntake,
   type TripOption,
 } from "@/lib/types";
@@ -25,14 +27,16 @@ type PersistedTripState = {
   selectedIds: string[];
   options: TripOption[];
   currentStep: number;
+  itinerary: Itinerary | null;
 };
 
 export type TripStore = PersistedTripState & {
   setIntake: (intake: TripIntake) => void;
-  setBudgetPlan: (plan: BudgetPlan) => void;
   adjustBucket: (bucket: BucketKey, nextValue: Cents) => void;
   resetBudgetPlan: () => void;
   setOptions: (options: unknown) => void;
+  setOptionsForKind: (kind: TripOption["kind"], options: unknown) => void;
+  setItinerary: (itinerary: unknown) => void;
   toggleOption: (id: string, selected?: boolean) => void;
   setCurrentStep: (step: number) => void;
   resetTrip: () => void;
@@ -45,6 +49,7 @@ const persistedTripSchema = z
     selectedIds: z.array(z.string().min(1)),
     options: tripOptionSchema.array(),
     currentStep: z.number().int().min(FIRST_TRIP_STEP).max(LAST_TRIP_STEP),
+    itinerary: itinerarySchema.nullable().default(null),
   })
   .strict();
 
@@ -65,6 +70,7 @@ function initialTripState(): PersistedTripState {
     selectedIds: [],
     options: [...fixtureOptions],
     currentStep: FIRST_TRIP_STEP,
+    itinerary: null,
   };
 }
 
@@ -84,11 +90,11 @@ export const useTripStore = create<TripStore>()(
           intake: parsed,
           budgetPlan: allocateBuckets(parsed),
           selectedIds: [],
+          options: [],
           currentStep: FIRST_TRIP_STEP,
+          itinerary: null,
         });
       },
-
-      setBudgetPlan: (plan) => set({ budgetPlan: budgetPlanSchema.parse(plan) }),
 
       adjustBucket: (bucket, nextValue) =>
         set((state) => {
@@ -114,8 +120,34 @@ export const useTripStore = create<TripStore>()(
         set((state) => ({
           options: parsed,
           selectedIds: state.selectedIds.filter((id) => availableIds.has(id)),
+          itinerary: null,
         }));
       },
+
+      setOptionsForKind: (kind, options) => {
+        const parsed = tripOptionSchema.array().parse(options);
+        if (parsed.some((option) => option.kind !== kind)) {
+          throw new Error(`Expected only ${kind} options.`);
+        }
+
+        set((state) => {
+          const previous = state.options.filter((option) => option.kind === kind);
+          if (JSON.stringify(previous) === JSON.stringify(parsed)) return state;
+
+          const nextOptions = [
+            ...state.options.filter((option) => option.kind !== kind),
+            ...parsed,
+          ];
+          const availableIds = new Set(nextOptions.map((option) => option.id));
+          return {
+            options: nextOptions,
+            selectedIds: state.selectedIds.filter((id) => availableIds.has(id)),
+            itinerary: null,
+          };
+        });
+      },
+
+      setItinerary: (itinerary) => set({ itinerary: itinerarySchema.parse(itinerary) }),
 
       toggleOption: (id, selected) =>
         set((state) => {
@@ -128,6 +160,7 @@ export const useTripStore = create<TripStore>()(
             selectedIds: shouldSelect
               ? [...state.selectedIds, id]
               : state.selectedIds.filter((selectedId) => selectedId !== id),
+            itinerary: null,
           };
         }),
 
@@ -146,17 +179,25 @@ export const useTripStore = create<TripStore>()(
         selectedIds: state.selectedIds,
         options: state.options,
         currentStep: state.currentStep,
+        itinerary: state.itinerary,
       }),
       merge: (persistedState, currentState) => {
         const parsed = persistedTripSchema.safeParse(persistedState);
         if (!parsed.success) return currentState;
 
         const optionIds = new Set(parsed.data.options.map((option) => option.id));
+        const restoredSelectedIds = parsed.data.selectedIds.filter((id) => optionIds.has(id));
+        const lostSelections = restoredSelectedIds.length !== parsed.data.selectedIds.length;
+        const restoredPlan = parsed.data.intake
+          ? (parsed.data.budgetPlan ?? allocateBuckets(parsed.data.intake))
+          : null;
         return {
           ...currentState,
           ...parsed.data,
-          budgetPlan: parsed.data.intake ? parsed.data.budgetPlan : null,
-          selectedIds: parsed.data.selectedIds.filter((id) => optionIds.has(id)),
+          budgetPlan: restoredPlan,
+          selectedIds: restoredSelectedIds,
+          itinerary:
+            parsed.data.intake && !lostSelections ? parsed.data.itinerary : null,
           currentStep: parsed.data.intake ? parsed.data.currentStep : FIRST_TRIP_STEP,
         };
       },
