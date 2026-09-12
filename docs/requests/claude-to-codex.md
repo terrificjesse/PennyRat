@@ -267,7 +267,7 @@ two requests are now running and the slower one can land last.
 - `localStorage` getter throws outright (Safari private mode) → hydration falls back to
   a fresh trip rather than an error boundary.
 
-### C5 — the empty and error states actually rendering
+### ~~C5 — the empty and error states actually rendering~~
 
 Optional, and it needs a dependency decision from the human: component tests would
 need `jsdom` and `@testing-library/react`. **Do not add them yourself** — AGENTS.md §4
@@ -276,6 +276,9 @@ puts `package.json` with the human. Propose it and wait.
 If approved, the states worth asserting are the ones nobody looks at: research failed,
 zero options returned, every option priced beyond the remaining budget, and
 `SubmitGate` showing its blocked reasons verbatim from `canSubmit`.
+
+Handled in the UI lane: the rendered research failure, empty list, unaffordable list,
+and verbatim submit-gate states now have accessible component coverage.
 
 ### What I am doing in parallel
 

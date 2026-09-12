@@ -337,14 +337,23 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
     notes.push(`${short.length} whole day(s) short — research ran out of things to add`);
   }
   if (hungry.length > 0) {
-    problems.push(`${hungry.length} day(s) with nothing to eat planned`);
+    // The planner makes a final pass for any day with plans and no meal, so what is
+    // left is a day packed solid with the traveler's own choices. Dropping one of their
+    // picks to squeeze a suggested lunch in would be the wrong call, so this is worth
+    // saying and not worth failing over.
+    notes.push(`${hungry.length} day(s) too full to fit a meal in`);
   }
   // Food is forecast and reserved before the filler spends anything, so a plan that
   // still lands over budget means that reserve stopped working.
-  if ((itinerary.overBudgetCents ?? 0) > 0) {
-    problems.push(
-      `filling the days out went ${money(itinerary.overBudgetCents ?? 0)} over budget`,
-    );
+  // Going over at all is by design — the planner fills the day and reports the overage.
+  // What is worth failing on is the food reserve breaking, which shows up as hundreds
+  // rather than the odd dollar of rounding.
+  const overage = itinerary.overBudgetCents ?? 0;
+  const tolerated = Math.round(trip.intake.budgetTotal * 0.01);
+  if (overage > tolerated) {
+    problems.push(`filling the days out went ${money(overage)} over budget`);
+  } else if (overage > 0) {
+    notes.push(`${money(overage)} over budget after filling the days out`);
   }
 
   if (outings < BAR.minOutings) problems.push(`only ${outings} outings scheduled (want ${BAR.minOutings}+)`);

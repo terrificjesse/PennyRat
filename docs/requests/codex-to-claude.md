@@ -77,3 +77,11 @@ accessible queries rather than implementation details.
 
 Please approve adding both packages to `package.json` and the lockfile. No dependency was
 installed and neither human-owned file was changed during this pass.
+
+---
+
+## 2026-09-12 · submit gate migration is complete
+
+The UI now reads `canSubmit().blockers` to stop scheduling and renders `warnings`
+separately, both verbatim. Component coverage holds that behavior. The deprecated
+`SubmitCheck.reasons` compatibility field can be removed in the next contract change.

@@ -236,14 +236,23 @@ describe('pace', () => {
 describe('meals', () => {
   const everything = [...base, ...fixtureActivities.map((option) => option.id)];
 
-  it('seats restaurants at mealtimes rather than mid-afternoon', () => {
+  /**
+   * Near the hour, not on it. A meal may slide up to ninety minutes so a busy day still
+   * gets fed — lunch at 13:15 is lunch, and going unfed is the worse answer.
+   */
+  it('seats restaurants around mealtimes rather than mid-afternoon', () => {
     const itinerary = plan(everything);
     const meals = allBlocks(itinerary).filter((block) => block.kind === 'meal');
+    const slots = [
+      minutesFromClock('08:00'),
+      minutesFromClock('12:30'),
+      minutesFromClock('19:00'),
+    ];
 
     expect(meals.length).toBeGreaterThan(0);
     for (const meal of meals) {
-      expect([minutesFromClock('08:00'), minutesFromClock('12:30'), minutesFromClock('19:00')])
-        .toContain(minutes(meal.start));
+      const nearest = Math.min(...slots.map((slot) => Math.abs(minutes(meal.start) - slot)));
+      expect(nearest, `${meal.title} at ${meal.start.slice(11)}`).toBeLessThanOrEqual(90);
     }
   });
 
@@ -284,7 +293,10 @@ describe('meals', () => {
   it('sends the evening izakaya to dinner, not to breakfast', () => {
     const itinerary = plan(everything);
     const block = blockFor(itinerary, 'act_nakameguro_izakaya');
-    if (block) expect(minutes(block.start)).toBe(minutesFromClock('19:00'));
+    if (block) {
+      expect(minutes(block.start)).toBeGreaterThanOrEqual(minutesFromClock('17:30'));
+      expect(block.title.startsWith('Dinner')).toBe(true);
+    }
   });
 });
 
@@ -752,5 +764,56 @@ describe('blocks the traveler pinned', () => {
     expect(itinerary.totalCents).toBe(
       (itinerary.chosenCents ?? 0) + (itinerary.suggestedCents ?? 0),
     );
+  });
+});
+
+/**
+ * Washington DC research came back with four restaurants for a five-day trip, which
+ * left the last three days with no dinner. Distinct lunches and dinners are the ideal,
+ * not a rule worth going hungry over.
+ */
+describe('feeding a trip on a short list of restaurants', () => {
+  function withOnly(count: number) {
+    const restaurants = fixtureActivities
+      .filter((option) => option.category === 'restaurant')
+      .slice(0, count);
+    const rest = fixtureOptions.filter(
+      (option) => option.kind !== 'activity' || option.category !== 'restaurant',
+    );
+    return [...rest, ...restaurants];
+  }
+
+  it('never seats the same place twice in one day', () => {
+    for (const supply of [2, 4, 8, 14]) {
+      const itinerary = buildItinerary(intake, withOnly(supply), base);
+      for (const day of itinerary.days) {
+        const ids = day.blocks.filter((block) => block.kind === 'meal').map((b) => b.refId);
+        expect(new Set(ids).size, `${supply} restaurants, ${day.date}`).toBe(ids.length);
+      }
+    }
+  });
+
+  it('still feeds every day when there are only three places to eat', () => {
+    const itinerary = buildItinerary(intake, withOnly(3), base);
+    const onTheGround = itinerary.days.filter(
+      (day) => day.blocks.length > 0 && day.blocks.some((block) => block.kind !== 'flight'),
+    );
+
+    for (const day of onTheGround) {
+      expect(
+        day.blocks.some((block) => block.kind === 'meal'),
+        `${day.date} has nothing to eat`,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps lunches and dinners distinct while the supply allows it', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base);
+    const mains = itinerary.days
+      .flatMap((day) => day.blocks)
+      .filter((block) => block.kind === 'meal' && !block.title.startsWith('Breakfast'))
+      .map((block) => block.refId);
+
+    expect(new Set(mains).size).toBe(mains.length);
   });
 });

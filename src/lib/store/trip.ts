@@ -37,6 +37,7 @@ type TripDocument = {
   itinerary: Itinerary | null;
   excludedIds: string[];
   pinned: SchedulePin[];
+  scheduleCelebrated: boolean;
 };
 
 export type SchedulePin = NonNullable<ScheduleRequest["pinned"]>[number];
@@ -71,6 +72,7 @@ export type TripStore = PersistedTripState & {
   openSavedTrip: (id: string) => void;
   renameSavedTrip: (id: string, name: string) => void;
   deleteSavedTrip: (id: string) => void;
+  markScheduleCelebrated: () => void;
   resetTrip: () => void;
 };
 
@@ -86,6 +88,7 @@ const tripDocumentSchema = z
     itinerary: itinerarySchema.nullable().default(null),
     excludedIds: z.array(z.string().min(1)).default([]),
     pinned: schedulePinsSchema.default([]),
+    scheduleCelebrated: z.boolean().default(false),
   })
   .strict();
 
@@ -152,6 +155,7 @@ function initialTripDocument(): TripDocument {
     itinerary: null,
     excludedIds: [],
     pinned: [],
+    scheduleCelebrated: false,
   };
 }
 
@@ -189,6 +193,8 @@ function tripDocumentFrom(state: TripStore, changes: Partial<TripDocument>): Tri
     itinerary: changes.itinerary === undefined ? state.itinerary : changes.itinerary,
     excludedIds: changes.excludedIds ?? state.excludedIds,
     pinned: changes.pinned ?? state.pinned,
+    scheduleCelebrated:
+      changes.scheduleCelebrated ?? state.scheduleCelebrated,
   };
 }
 
@@ -233,6 +239,7 @@ export const useTripStore = create<TripStore>()(
             itinerary: null,
             excludedIds: [],
             pinned: [],
+            scheduleCelebrated: false,
           }),
         );
       },
@@ -347,6 +354,7 @@ export const useTripStore = create<TripStore>()(
             itinerary: saved.itinerary,
             excludedIds: [...saved.excludedIds],
             pinned: [...saved.pinned],
+            scheduleCelebrated: saved.scheduleCelebrated,
             activeTripId: saved.id,
           };
         }),
@@ -367,6 +375,13 @@ export const useTripStore = create<TripStore>()(
             : {}),
           savedTrips: state.savedTrips.filter((trip) => trip.id !== id),
         })),
+
+      markScheduleCelebrated: () =>
+        set((state) =>
+          state.scheduleCelebrated
+            ? state
+            : saveActiveTrip(state, { scheduleCelebrated: true }),
+        ),
 
       resetTrip: () =>
         set((state) => ({
@@ -389,6 +404,7 @@ export const useTripStore = create<TripStore>()(
         itinerary: state.itinerary,
         excludedIds: state.excludedIds,
         pinned: state.pinned,
+        scheduleCelebrated: state.scheduleCelebrated,
         activeTripId: state.activeTripId,
         savedTrips: state.savedTrips,
       }),
@@ -416,6 +432,7 @@ export const useTripStore = create<TripStore>()(
               itinerary: lostSelections ? null : parsed.data.itinerary,
               excludedIds: parsed.data.excludedIds,
               pinned: parsed.data.pinned,
+              scheduleCelebrated: parsed.data.scheduleCelebrated,
               id: activeTripId,
               name: defaultTripName(parsed.data.intake),
               updatedAt: Date.now(),

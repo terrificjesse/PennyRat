@@ -29,9 +29,12 @@ export const rawFlightRouteSchema = z.object({
   /** How the journey is made. Absent means flying. */
   mode: optionalish(z.enum(['plane', 'train', 'bus', 'car'])),
   carrier: z.string().min(2).max(40),
-  legs: z.array(rawFlightLegSchema).min(1).max(4),
-  /** Only for a roundtrip: the way home. */
-  returnLegs: optionalish(z.array(rawFlightLegSchema).min(1).max(4)),
+  legs: z.array(rawFlightLegSchema).max(4),
+  /**
+   * Only for a roundtrip: the way home. An empty array means the model filled the key
+   * in on a one-way out of tidiness, which is not the same as having a way home.
+   */
+  returnLegs: optionalish(z.array(rawFlightLegSchema).max(4)),
   layoverMinutes: optionalish(z.array(z.number().int().min(0).max(1500)).max(3)),
   fareBandUsdPerPerson: z.object({
     low: z.number().min(20).max(20000),

@@ -166,10 +166,22 @@ export function buildFlightOptions(
     const label = `${route.carrier} ${route.direction} #${index + 1}`;
     let confidence = route.confidence;
 
+    // Two things the model does that are not worth losing an option over: it fills in
+    // `returnLegs: []` on a one-way out of tidiness, and on a `return` entry it
+    // sometimes puts the journey in `returnLegs` rather than `legs`, which is a
+    // reasonable reading of the field name.
+    const homewardRaw = route.returnLegs?.length ? route.returnLegs : undefined;
+    const outwardRaw = route.legs.length > 0 ? route.legs : homewardRaw;
+
+    if (!outwardRaw || outwardRaw.length === 0) {
+      warnings.push(`dropped ${label} (no journey in it)`);
+      return;
+    }
+
     // A one-way `return` option is itself the way home, so its legs belong on the end
     // date; everything else starts on the outward date.
     const outwardDate = route.direction === 'return' ? intake.endDate : intake.startDate;
-    const outward = prepareLegs(route.legs, outwardDate, route.carrier);
+    const outward = prepareLegs(outwardRaw, outwardDate, route.carrier);
     if (outward.problem) {
       warnings.push(`dropped ${label} (${outward.problem})`);
       return;
@@ -182,11 +194,14 @@ export function buildFlightOptions(
 
     let returnLegs: FlightLeg[] | undefined;
     if (route.direction === 'roundtrip') {
-      if (!route.returnLegs || route.returnLegs.length === 0) {
+      // Only a genuine round trip needs the way home; `outwardRaw` may already have
+      // borrowed it if `legs` was the empty one.
+      const homewardLegs = outwardRaw === homewardRaw ? undefined : homewardRaw;
+      if (!homewardLegs) {
         warnings.push(`dropped ${label} (a round trip with no way home)`);
         return;
       }
-      const homeward = prepareLegs(route.returnLegs, intake.endDate, route.carrier);
+      const homeward = prepareLegs(homewardLegs, intake.endDate, route.carrier);
       if (homeward.problem) {
         warnings.push(`dropped ${label} (way home: ${homeward.problem})`);
         return;

@@ -98,6 +98,16 @@ describe("trip store", () => {
     });
   });
 
+  it("remembers that a saved trip already showed its schedule celebration", () => {
+    useTripStore.getState().setIntake(fixtureIntake);
+
+    expect(useTripStore.getState().scheduleCelebrated).toBe(false);
+    useTripStore.getState().markScheduleCelebrated();
+
+    expect(useTripStore.getState().scheduleCelebrated).toBe(true);
+    expect(useTripStore.getState().savedTrips[0].scheduleCelebrated).toBe(true);
+  });
+
   it("uses the shared budget helper when a bucket changes", () => {
     useTripStore.getState().setIntake(fixtureIntake);
     const original = useTripStore.getState().budgetPlan;

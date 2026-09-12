@@ -47,6 +47,8 @@ const PAD_CROSS_TOWN = 30;
 const PAD_AIRPORT = 90;
 
 const TIGHT_CONNECTION = 60;
+/** How far a meal may slide from its named hour and still be that meal. */
+const MEAL_DRIFT = 90;
 
 const MEAL_SLOTS = [
   { label: 'Dinner', start: 19 * 60, fits: 'evening' },
@@ -358,8 +360,18 @@ function placeMeals(
   const usedForMainMeals = new Set<string>();
   const seated = new Set<string>();
 
+  // Distinct lunches and dinners are the ideal, not a rule worth going hungry over.
+  // Research sometimes comes back with four restaurants for a five-day trip, and eating
+  // somewhere twice beats a day with no dinner on it.
+  const mainMealsNeeded = days.filter((day) => day.onTheGround).length * 2;
+  const scarce = restaurants.length < mainMealsNeeded;
+
   for (const day of days) {
     if (!day.onTheGround) continue;
+
+    const eatenToday = new Set(
+      day.placed.filter((block) => block.isMeal).map((block) => block.refId),
+    );
 
     // Wherever the day already takes them, so lunch and dinner are not across town.
     const dayAreas = new Set(
@@ -369,25 +381,41 @@ function placeMeals(
     for (const slot of MEAL_SLOTS) {
       const wantArea = slot.label === 'Breakfast' ? lodgingArea : undefined;
 
+      // Lunch at 13:15 is still lunch. Demanding the exact minute meant a busy day
+      // simply went unfed, which is a worse answer than eating a little late.
+      const fitAt = (option: ActivityOption): number | null => {
+        const search = {
+          start: Math.max(day.frame.start, slot.start - MEAL_DRIFT),
+          end: Math.min(day.frame.end, slot.start + MEAL_DRIFT + option.durationMinutes),
+        };
+        const busy = busyFor(day, option.neighborhood);
+
+        for (const open of openIntervalsOn(option, day.date)) {
+          const window = intersect(open, search);
+          if (!window) continue;
+          const at = earliestFit(window, option.durationMinutes, busy);
+          if (at !== null) return at;
+        }
+        return null;
+      };
+
       const candidates = restaurants
-        .filter((option) => slot.label === 'Breakfast' || !usedForMainMeals.has(option.id))
-        .filter((option) => {
-          const window = { start: slot.start, end: slot.start + option.durationMinutes };
-          return (
-            window.end <= day.frame.end &&
-            window.start >= day.frame.start &&
-            isOpenThroughout(option, day.date, window) &&
-            earliestFit(window, option.durationMinutes, busyFor(day, option.neighborhood)) ===
-              slot.start
-          );
-        })
-        .sort((a, b) => score(b) - score(a));
+        // Never the same place twice in one day, whatever the slot.
+        .filter((option) => !eatenToday.has(option.id))
+        .filter(
+          (option) =>
+            slot.label === 'Breakfast' || scarce || !usedForMainMeals.has(option.id),
+        )
+        .map((option) => ({ option, at: fitAt(option) }))
+        .filter((entry): entry is { option: ActivityOption; at: number } => entry.at !== null)
+        .sort((a, b) => score(b.option) - score(a.option));
 
       function score(option: ActivityOption): number {
         let points = 0;
         if (chosen.has(option.id)) points += 100;
         if (wantArea && option.neighborhood === wantArea) points += 40;
         if (!wantArea && dayAreas.has(option.neighborhood)) points += 30;
+        if (scarce && usedForMainMeals.has(option.id)) points -= 25;
         if (option.bestTimeOfDay === slot.fits) points += 20;
         else if (option.bestTimeOfDay === 'any') points += 10;
 
@@ -398,29 +426,30 @@ function placeMeals(
         return points + (option.rating ?? 0);
       }
 
-      const chosenPlace = candidates[0];
-      if (!chosenPlace) continue;
+      const winner = candidates[0];
+      if (!winner) continue;
+      const chosenPlace = winner.option;
+      const at = winner.at;
 
       place(day, {
-        start: localDateTime(day.date, slot.start),
-        end: localDateTime(day.date, slot.start + chosenPlace.durationMinutes),
+        start: localDateTime(day.date, at),
+        end: localDateTime(day.date, at + chosenPlace.durationMinutes),
         kind: 'meal',
         refId: chosenPlace.id,
         title: `${slot.label} · ${chosenPlace.title}`,
         note: chosenPlace.bookingRequired ? 'Book ahead' : chosenPlace.neighborhood,
         costCents: chosenPlace.costCents,
         suggested: !chosen.has(chosenPlace.id) || seated.has(chosenPlace.id) || undefined,
-        alternatives: candidates
-          .slice(1, 5)
-          .map((option) => option.id),
-        startMin: slot.start,
-        endMin: slot.start + chosenPlace.durationMinutes,
+        alternatives: candidates.slice(1, 5).map((entry) => entry.option.id),
+        startMin: at,
+        endMin: at + chosenPlace.durationMinutes,
         neighborhood: chosenPlace.neighborhood,
         isMeal: true,
         isActivity: false,
       });
 
       seated.add(chosenPlace.id);
+      eatenToday.add(chosenPlace.id);
       if (slot.label !== 'Breakfast') usedForMainMeals.add(chosenPlace.id);
     }
   }
@@ -504,6 +533,45 @@ function fillDays(
   }
 
   return { added, spent: budgetLeft - left };
+}
+
+/**
+ * A last sweep for any day that ended up with something to do and nothing to eat.
+ *
+ * The named slots can all be occupied on a busy day, which is how a traveler ended up
+ * sightseeing through Washington DC without a meal on the plan. Anywhere on the day will
+ * do at this point.
+ */
+function feedEveryDay(days: Day[], restaurants: readonly ActivityOption[]): void {
+  for (const day of days) {
+    if (!day.onTheGround) continue;
+    if (day.placed.some((block) => block.isMeal)) continue;
+    if (!day.placed.some((block) => block.isActivity)) continue;
+
+    const eatenToday = new Set(day.placed.map((block) => block.refId));
+    const candidate = restaurants
+      .filter((option) => !eatenToday.has(option.id))
+      .map((option) => ({ option, at: findSlot(day, option) }))
+      .find((entry) => entry.at !== null);
+
+    if (!candidate || candidate.at === null) continue;
+
+    place(day, {
+      start: localDateTime(day.date, candidate.at),
+      end: localDateTime(day.date, candidate.at + candidate.option.durationMinutes),
+      kind: 'meal',
+      refId: candidate.option.id,
+      title: `Meal · ${candidate.option.title}`,
+      note: candidate.option.neighborhood,
+      costCents: candidate.option.costCents,
+      suggested: true,
+      startMin: candidate.at,
+      endMin: candidate.at + candidate.option.durationMinutes,
+      neighborhood: candidate.option.neighborhood,
+      isMeal: true,
+      isActivity: false,
+    });
+  }
 }
 
 /** The earliest moment `option` could sit on `day`, or null if it cannot. */
@@ -797,6 +865,8 @@ export function buildItinerary(
   );
   for (const id of selected) placedIds.add(id);
 
+  feedEveryDay(days, availableActivities.filter((o) => o.category === 'restaurant'));
+
   // Restaurants are fill material too once the three meal slots are set — a coffee
   // house or a market is a perfectly good way to spend a short afternoon, and leaving a
   // day thin while one sits available is not a plan anybody wants.
@@ -805,11 +875,15 @@ export function buildItinerary(
   // filler buys attractions up to the ceiling and dinner arrives on top, which is how
   // every trip ended up over.
   const food = forecastFood(intake, options);
-  const mealsAlreadyPlaced = days
+  // Meals are already on the plan by now, so reserve what they actually cost rather
+  // than what was forecast — clamping the difference to zero handed the filler money
+  // that dinner had already spent. Only the suggested ones count; the traveler's own
+  // picks are in chosenCents.
+  const suggestedMealCents = days
     .flatMap((day) => day.placed)
-    .filter((block) => block.isMeal)
+    .filter((block) => block.isMeal && block.suggested)
     .reduce((acc, block) => acc + block.costCents, 0);
-  const foodStillToCome = Math.max(0, food.totalCents - mealsAlreadyPlaced);
+  const foodStillToCome = Math.max(suggestedMealCents, food.totalCents - suggestedMealCents);
 
   fillDays(
     days,

@@ -647,3 +647,53 @@ describe('ratings on whatever scale the model felt like', () => {
     expect(options.every((stay) => (stay.rating ?? 0) <= 5)).toBe(true);
   });
 });
+
+/**
+ * Two shapes the model produces that used to cost an option each. Mexico City was
+ * returning four routings out of ten because six of them tripped one of these.
+ */
+describe('flight entries the model shapes oddly', () => {
+  it('ignores an empty returnLegs on a one-way', () => {
+    const tidy = { ...route(), returnLegs: [] as RawFlightRoute['legs'] };
+    const { options } = buildFlightOptions([tidy], intake, today);
+
+    expect(options).toHaveLength(1);
+    expect(options[0].returnLegs).toBeUndefined();
+  });
+
+  it('reads a return journey the model filed under returnLegs', () => {
+    const misfiled: RawFlightRoute = {
+      ...route(),
+      direction: 'return',
+      legs: [],
+      returnLegs: [
+        {
+          fromIata: 'NRT',
+          toIata: 'ORD',
+          departLocal: '2026-10-17T15:45',
+          arriveLocal: '2026-10-17T13:40',
+          durationMinutes: 715,
+        },
+      ],
+    };
+
+    const { options } = buildFlightOptions([misfiled], intake, today);
+    expect(options).toHaveLength(1);
+    expect(options[0].direction).toBe('return');
+    expect(options[0].legs[0].from).toBe('NRT');
+    expect(options[0].legs[0].departLocal.slice(0, 10)).toBe(intake.endDate);
+  });
+
+  it('still refuses a round trip with no way home', () => {
+    const broken: RawFlightRoute = { ...route(), direction: 'roundtrip', returnLegs: [] };
+    const { options, warnings } = buildFlightOptions([broken], intake, today);
+
+    expect(options).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('no way home'))).toBe(true);
+  });
+
+  it('drops an entry with no journey in it at all', () => {
+    const empty: RawFlightRoute = { ...route(), legs: [], returnLegs: [] };
+    expect(buildFlightOptions([empty], intake, today).options).toHaveLength(0);
+  });
+});
