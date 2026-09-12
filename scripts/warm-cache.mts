@@ -63,7 +63,7 @@ const DEMO_TRIPS: { label: string; why: string; intake: Intake }[] = [
       startDate: '2027-02-10',
       endDate: '2027-02-15',
       travelers: 2,
-      budgetTotal: 450_000,
+      budgetTotal: 360_000,
       interests: ['hiking', 'food'],
       pace: 'relaxed',
     },

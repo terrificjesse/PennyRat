@@ -126,8 +126,16 @@ export type FlightLeg = z.infer<typeof flightLegSchema>;
 export const flightOptionSchema = selectableBase.extend({
   kind: z.literal('flight'),
   bucket: z.literal('flights'),
-  direction: z.enum(['outbound', 'return']),
+  /**
+   * A `roundtrip` carries the way home in `returnLegs` and satisfies both directions
+   * on its own. Two one-ways are almost always dearer than the equivalent round trip,
+   * so this is the shape most travelers actually buy.
+   */
+  direction: z.enum(['outbound', 'return', 'roundtrip']),
+  /** The outward journey. For a one-way `return` option, this *is* the way home. */
   legs: z.array(flightLegSchema).min(1).max(4),
+  /** Set only when `direction` is `roundtrip`. */
+  returnLegs: z.array(flightLegSchema).min(1).max(4).optional(),
   stops: z.number().int().min(0).max(3),
   totalDurationMinutes: z.number().int().positive().max(4320),
   cabin: z.enum(['economy', 'premium', 'business']),
@@ -253,6 +261,10 @@ export const scheduleBlockSchema = z.object({
   title: z.string().min(1).max(160),
   note: z.string().max(240).optional(),
   costCents: cents,
+  /** The planner put this here; the traveler did not choose it. */
+  suggested: z.boolean().optional(),
+  /** Option ids that could take this slot instead, for a one-tap swap. */
+  alternatives: z.array(z.string()).max(8).optional(),
 });
 export type ScheduleBlock = z.infer<typeof scheduleBlockSchema>;
 
@@ -261,12 +273,23 @@ export const dayPlanSchema = z.object({
   blocks: z.array(scheduleBlockSchema),
   daySpendCents: cents,
   warnings: z.array(z.string()),
+  /** Option ids that would genuinely fit somewhere on this day, for the add control. */
+  couldAdd: z.array(z.string()).max(12).optional(),
+  /** Blocks plus the travel padding between them, so the UI can show how full a day is. */
+  filledMinutes: z.number().int().nonnegative().optional(),
 });
 export type DayPlan = z.infer<typeof dayPlanSchema>;
 
 export const itinerarySchema = z.object({
   days: z.array(dayPlanSchema),
+  /** Everything on the plan, chosen and suggested alike. */
   totalCents: cents,
+  /** What the traveler actually ticked. */
+  chosenCents: cents.optional(),
+  /** What the planner added to fill the days out. */
+  suggestedCents: cents.optional(),
+  /** How far `totalCents` runs past the budget, or zero. */
+  overBudgetCents: cents.optional(),
   unscheduled: z.array(z.object({ id: z.string(), reason: z.string() })),
   warnings: z.array(z.string()),
 });
@@ -317,7 +340,10 @@ export type TransitResponse = z.infer<typeof transitResponseSchema>;
 export const scheduleRequestSchema = z.object({
   intake: tripIntakeSchema,
   options: z.array(tripOptionSchema),
+  /** Must appear on the plan. */
   selectedIds: z.array(z.string()),
+  /** Never suggest these — the traveler removed them and meant it. */
+  excludedIds: z.array(z.string()).optional(),
 });
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
 

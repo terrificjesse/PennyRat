@@ -1150,5 +1150,652 @@
     "rating": 4.0,
     "reviewCount": 1850,
     "sensoryNotes": "Single quiet room, rarely more than a few people in it."
+  },
+  {
+    "id": "act_cafe_bear_pond",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Bear Pond Espresso",
+    "costCents": 1600,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shimokitazawa",
+    "description": "A tiny counter that pulls one of the best espressos in the city and closes when the beans run out. Cash only, no laptops.",
+    "durationMinutes": 40,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      ],
+      "wed": null,
+      "thu": [
+        {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.4,
+    "reviewCount": 5200,
+    "sensoryNotes": "Six seats and a strict no-photography rule, so it stays calm."
+  },
+  {
+    "id": "act_cafe_kissa",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Chatei Hatou kissaten",
+    "costCents": 2200,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shibuya",
+    "description": "A hushed old-school coffee house where each cup is siphoned to order and served in a hand-picked antique. Breakfast toast is thick-cut.",
+    "durationMinutes": 50,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "08:00",
+          "close": "23:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.5,
+    "reviewCount": 3900,
+    "sensoryNotes": "Quiet enough that conversation happens in murmurs."
+  },
+  {
+    "id": "act_bakery_viron",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Viron boulangerie",
+    "costCents": 1800,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shibuya",
+    "description": "French flour, Japanese precision. Get the baguette retrodor and a bowl of cafe au lait upstairs before the queue forms.",
+    "durationMinutes": 45,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "07:30",
+          "close": "20:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "morning",
+    "rating": 4.3,
+    "reviewCount": 6100
+  },
+  {
+    "id": "act_onigiri_bongo",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Onigiri Bongo",
+    "costCents": 1400,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Otsuka",
+    "description": "Fifty-odd fillings, rice pressed to order, eaten standing at a seven-seat counter. The salmon and pickled plum is the one to get.",
+    "durationMinutes": 40,
+    "openingHours": {
+      "sun": null,
+      "mon": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.6,
+    "reviewCount": 4800
+  },
+  {
+    "id": "act_soba_matsunaga",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Sobakiri Matsunaga",
+    "costCents": 4200,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Nihonbashi",
+    "description": "Buckwheat milled that morning and cut by hand. Order seiro cold so you can taste the flour, then drink the cooking water at the end.",
+    "durationMinutes": 60,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:00",
+          "close": "15:00"
+        }
+      ],
+      "mon": null,
+      "tue": [
+        {
+          "open": "11:00",
+          "close": "15:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "11:00",
+          "close": "15:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:00",
+          "close": "15:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:00",
+          "close": "15:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:00",
+          "close": "15:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "afternoon",
+    "rating": 4.7,
+    "reviewCount": 2100
+  },
+  {
+    "id": "act_curry_kyuyamutei",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Kyuyamutei curry",
+    "costCents": 3000,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Omotesando",
+    "description": "A dim wooden room serving Japanese-Indonesian curry that has not changed its recipe in forty years. The pork is the house order.",
+    "durationMinutes": 55,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "tue": null,
+      "wed": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:30",
+          "close": "21:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "afternoon",
+    "rating": 4.4,
+    "reviewCount": 3300,
+    "sensoryNotes": "Low lighting and close tables; lively at peak times."
+  },
+  {
+    "id": "act_tonkatsu_maisen",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Tonkatsu Maisen Aoyama",
+    "costCents": 5600,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Aoyama",
+    "description": "Pork cutlet in a converted bathhouse. Ask for the kurobuta and eat it at the counter rather than the tourist tables at the back.",
+    "durationMinutes": 70,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:00",
+          "close": "22:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "evening",
+    "rating": 4.4,
+    "reviewCount": 11200
+  },
+  {
+    "id": "act_yakitori_torikizoku",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Torikizoku Shinjuku",
+    "costCents": 3400,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shinjuku",
+    "description": "Everything on the menu is the same price, the skewers arrive fast, and nobody minds how long you sit. The best cheap dinner in the city.",
+    "durationMinutes": 90,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "mon": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "tue": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "wed": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "thu": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "fri": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ],
+      "sat": [
+        {
+          "open": "17:00",
+          "close": "23:30"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food",
+      "nightlife"
+    ],
+    "bestTimeOfDay": "evening",
+    "rating": 4.0,
+    "reviewCount": 8700,
+    "sensoryNotes": "Loud, smoky and shoulder to shoulder after 19:00."
+  },
+  {
+    "id": "act_standing_sushi",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Uogashi Nihon-Ichi standing sushi",
+    "costCents": 4600,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shibuya",
+    "description": "Sushi eaten upright at a chest-high counter, ordered piece by piece. Half the price of sitting down and twice the speed.",
+    "durationMinutes": 50,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "11:30",
+          "close": "23:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food"
+    ],
+    "bestTimeOfDay": "any",
+    "rating": 4.3,
+    "reviewCount": 5400
+  },
+  {
+    "id": "act_depachika",
+    "kind": "activity",
+    "bucket": "food",
+    "title": "Isetan depachika food hall",
+    "costCents": 3200,
+    "costBasis": "per_party",
+    "estimated": true,
+    "confidence": "medium",
+    "category": "restaurant",
+    "neighborhood": "Shinjuku",
+    "description": "The basement food hall of a department store: tempura, wagyu croquettes and thirty kinds of pickle, all sampled before you buy.",
+    "durationMinutes": 60,
+    "openingHours": {
+      "sun": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "mon": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "tue": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "wed": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "thu": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "fri": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ],
+      "sat": [
+        {
+          "open": "10:00",
+          "close": "20:00"
+        }
+      ]
+    },
+    "closedDates": [],
+    "bookingRequired": false,
+    "interests": [
+      "food",
+      "shopping"
+    ],
+    "bestTimeOfDay": "afternoon",
+    "rating": 4.5,
+    "reviewCount": 9100,
+    "sensoryNotes": "Very crowded between 17:00 and 19:00 when commuters buy dinner."
   }
 ]

@@ -194,11 +194,25 @@ export function applySelection(
   };
 }
 
-export type SubmitCheck = { ok: boolean; reasons: string[] };
+export type SubmitCheck = {
+  ok: boolean;
+  /** Genuinely stops the trip. Only ever one thing: spending more than you have. */
+  blockers: string[];
+  /** Worth saying, never worth stopping for — the traveler may have other plans. */
+  warnings: string[];
+  /**
+   * @deprecated Blockers and warnings combined, kept so the UI lane can migrate
+   * without a red build. Remove once SubmitGate reads the two lists separately.
+   */
+  reasons: string[];
+};
 
 /**
- * The gate on the itinerary step: within budget, with at least one of each thing a
- * trip cannot do without.
+ * The gate on the itinerary step.
+ *
+ * Only going over budget stops anything. Somebody driving to the coast, or staying
+ * with family, still has a trip worth planning — telling them they cannot proceed
+ * without a flight and a hotel would be the app misunderstanding its own job.
  */
 export function canSubmit(
   intake: TripIntake,
@@ -207,28 +221,39 @@ export function canSubmit(
 ): SubmitCheck {
   const selected = new Set(selectedIds);
   const picked = options.filter((option) => selected.has(option.id));
-  const reasons: string[] = [];
+  const blockers: string[] = [];
+  const warnings: string[] = [];
 
   const spent = picked.reduce((acc, option) => acc + option.costCents, 0);
   if (spent > intake.budgetTotal) {
-    reasons.push(`You are ${formatCents(spent - intake.budgetTotal)} over budget.`);
+    blockers.push(`You are ${formatCents(spent - intake.budgetTotal)} over budget.`);
   }
 
   const flights = picked.filter((option) => option.kind === 'flight');
-  if (!flights.some((flight) => flight.direction === 'outbound')) {
-    reasons.push('Pick an outbound flight.');
+  const covers = (direction: 'outbound' | 'return') =>
+    flights.some(
+      (flight) => flight.direction === direction || flight.direction === 'roundtrip',
+    );
+
+  if (!covers('outbound')) {
+    warnings.push('No flight out — fine if you are driving or already there.');
   }
-  if (!flights.some((flight) => flight.direction === 'return')) {
-    reasons.push('Pick a return flight.');
+  if (!covers('return')) {
+    warnings.push('No flight home — fine if you are travelling on from here.');
   }
   if (!picked.some((option) => option.kind === 'lodging')) {
-    reasons.push('Pick somewhere to stay.');
+    warnings.push('Nowhere to stay picked — fine if you have somewhere already.');
   }
   if (!picked.some((option) => option.kind === 'activity')) {
-    reasons.push('Pick at least one thing to do.');
+    warnings.push('Nothing chosen to do yet. We will fill the days in for you.');
   }
 
-  return { ok: reasons.length === 0, reasons };
+  return {
+    ok: blockers.length === 0,
+    blockers,
+    warnings,
+    reasons: [...blockers, ...warnings],
+  };
 }
 
 /**

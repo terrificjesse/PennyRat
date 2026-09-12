@@ -1,5 +1,152 @@
 [
   {
+    "id": "flt_rt_mu",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "China Eastern via Shanghai \u00b7 round trip",
+    "costCents": 199000,
+    "costBasis": "per_person",
+    "estimated": true,
+    "confidence": "low",
+    "direction": "roundtrip",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "PVG",
+        "departLocal": "2026-10-12T02:05",
+        "arriveLocal": "2026-10-13T05:05",
+        "carrier": "China Eastern",
+        "flightNo": "MU298",
+        "durationMinutes": 900
+      },
+      {
+        "from": "PVG",
+        "to": "NRT",
+        "departLocal": "2026-10-13T09:55",
+        "arriveLocal": "2026-10-13T13:50",
+        "carrier": "China Eastern",
+        "flightNo": "MU575",
+        "durationMinutes": 175
+      }
+    ],
+    "returnLegs": [
+      {
+        "from": "NRT",
+        "to": "PVG",
+        "departLocal": "2026-10-17T13:15",
+        "arriveLocal": "2026-10-17T15:25",
+        "carrier": "China Eastern",
+        "flightNo": "MU576",
+        "durationMinutes": 190
+      },
+      {
+        "from": "PVG",
+        "to": "ORD",
+        "departLocal": "2026-10-18T12:40",
+        "arriveLocal": "2026-10-18T13:10",
+        "carrier": "China Eastern",
+        "flightNo": "MU297",
+        "durationMinutes": 810
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1345,
+    "cabin": "economy",
+    "baggageIncluded": false
+  },
+  {
+    "id": "flt_rt_ua",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "United \u00b7 nonstop both ways \u00b7 round trip",
+    "costCents": 312000,
+    "costBasis": "per_person",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "roundtrip",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "NRT",
+        "departLocal": "2026-10-12T11:35",
+        "arriveLocal": "2026-10-13T14:40",
+        "carrier": "United Airlines",
+        "flightNo": "UA881",
+        "durationMinutes": 785
+      }
+    ],
+    "returnLegs": [
+      {
+        "from": "NRT",
+        "to": "ORD",
+        "departLocal": "2026-10-17T15:45",
+        "arriveLocal": "2026-10-17T13:40",
+        "carrier": "United Airlines",
+        "flightNo": "UA882",
+        "durationMinutes": 715
+      }
+    ],
+    "stops": 0,
+    "totalDurationMinutes": 785,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
+    "id": "flt_rt_ke",
+    "kind": "flight",
+    "bucket": "flights",
+    "title": "Korean Air via ICN \u00b7 round trip",
+    "costCents": 218000,
+    "costBasis": "per_person",
+    "estimated": true,
+    "confidence": "medium",
+    "direction": "roundtrip",
+    "legs": [
+      {
+        "from": "ORD",
+        "to": "ICN",
+        "departLocal": "2026-10-12T13:00",
+        "arriveLocal": "2026-10-13T16:55",
+        "carrier": "Korean Air",
+        "flightNo": "KE038",
+        "durationMinutes": 835
+      },
+      {
+        "from": "ICN",
+        "to": "NRT",
+        "departLocal": "2026-10-13T19:05",
+        "arriveLocal": "2026-10-13T21:20",
+        "carrier": "Korean Air",
+        "flightNo": "KE703",
+        "durationMinutes": 135
+      }
+    ],
+    "returnLegs": [
+      {
+        "from": "NRT",
+        "to": "ICN",
+        "departLocal": "2026-10-17T09:30",
+        "arriveLocal": "2026-10-17T12:55",
+        "carrier": "Korean Air",
+        "flightNo": "KE704",
+        "durationMinutes": 145
+      },
+      {
+        "from": "ICN",
+        "to": "ORD",
+        "departLocal": "2026-10-17T14:20",
+        "arriveLocal": "2026-10-17T12:55",
+        "carrier": "Korean Air",
+        "flightNo": "KE037",
+        "durationMinutes": 755
+      }
+    ],
+    "stops": 1,
+    "totalDurationMinutes": 1100,
+    "cabin": "economy",
+    "baggageIncluded": true
+  },
+  {
     "id": "flt_out_ua_direct",
     "kind": "flight",
     "bucket": "flights",

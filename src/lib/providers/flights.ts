@@ -89,6 +89,56 @@ function routeTitle(carrier: string, legs: FlightLeg[]): string {
   return truncate(`${carrier} via ${hubs.join(', ')}`, 120);
 }
 
+type PreparedLegs = { legs: FlightLeg[]; shifted: boolean; problem?: string };
+
+/**
+ * Validates one chain of legs and lands it on `expectedDate`.
+ *
+ * The model routinely returns the right routing on the wrong date — most often a stale
+ * year from its training data. Shifting every leg by the same number of days preserves
+ * the overnight gaps between them exactly, so the size of the shift does not matter.
+ */
+function prepareLegs(
+  rawLegs: RawFlightRoute['legs'],
+  expectedDate: string,
+  carrier: string,
+): PreparedLegs {
+  const parsed = rawLegs.map((leg) => ({
+    depart: toLocalDateTime(leg.departLocal),
+    arrive: toLocalDateTime(leg.arriveLocal),
+    from: iata(leg.fromIata),
+    to: iata(leg.toIata),
+    durationMinutes: leg.durationMinutes,
+    flightNo: leg.flightNo,
+  }));
+
+  if (parsed.some((leg) => !leg.depart || !leg.arrive || !leg.from || !leg.to)) {
+    return { legs: [], shifted: false, problem: 'unreadable times or airport codes' };
+  }
+
+  const shift = epochDay(expectedDate) - epochDay(parsed[0].depart!.date);
+  const legs: FlightLeg[] = parsed.map((leg) => ({
+    from: leg.from!,
+    to: leg.to!,
+    departLocal: `${addDays(leg.depart!.date, shift)}T${leg.depart!.time}`,
+    arriveLocal: `${addDays(leg.arrive!.date, shift)}T${leg.arrive!.time}`,
+    carrier: truncate(carrier, 40),
+    flightNo: leg.flightNo?.trim() || undefined,
+    durationMinutes: clampInt(leg.durationMinutes, 20, 1200),
+  }));
+
+  const broken = legs.findIndex((leg, i) => i > 0 && leg.from !== legs[i - 1].to);
+  if (broken > 0) {
+    return {
+      legs: [],
+      shifted: shift !== 0,
+      problem: `leg ${broken + 1} starts somewhere leg ${broken} did not reach`,
+    };
+  }
+
+  return { legs, shifted: shift !== 0 };
+}
+
 export function buildFlightOptions(
   raw: RawFlightRoute[],
   intake: TripIntake,
@@ -106,46 +156,33 @@ export function buildFlightOptions(
     const label = `${route.carrier} ${route.direction} #${index + 1}`;
     let confidence = route.confidence;
 
-    const parsedTimes = route.legs.map((leg) => ({
-      depart: toLocalDateTime(leg.departLocal),
-      arrive: toLocalDateTime(leg.arriveLocal),
-      from: iata(leg.fromIata),
-      to: iata(leg.toIata),
-      durationMinutes: leg.durationMinutes,
-      flightNo: leg.flightNo,
-    }));
-
-    if (parsedTimes.some((leg) => !leg.depart || !leg.arrive || !leg.from || !leg.to)) {
-      warnings.push(`dropped ${label} (unreadable times or airport codes)`);
+    // A one-way `return` option is itself the way home, so its legs belong on the end
+    // date; everything else starts on the outward date.
+    const outwardDate = route.direction === 'return' ? intake.endDate : intake.startDate;
+    const outward = prepareLegs(route.legs, outwardDate, route.carrier);
+    if (outward.problem) {
+      warnings.push(`dropped ${label} (${outward.problem})`);
       return;
     }
-
-    // The model routinely returns the right routing on the wrong date — most often a
-    // stale year from its training data. Shifting every leg by the same number of days
-    // lands it on the trip while preserving the overnight gaps between legs exactly,
-    // so the size of the shift does not matter.
-    const expectedDate = route.direction === 'outbound' ? intake.startDate : intake.endDate;
-    const actualDate = parsedTimes[0].depart!.date;
-    const shift = epochDay(expectedDate) - epochDay(actualDate);
-    if (shift !== 0) {
-      warnings.push(`moved ${label} from ${actualDate} to ${expectedDate}`);
+    if (outward.shifted) {
+      warnings.push(`moved ${label} onto ${outwardDate}`);
       if (confidence === 'high') confidence = 'medium';
     }
+    const legs = outward.legs;
 
-    const legs: FlightLeg[] = parsedTimes.map((leg) => ({
-      from: leg.from!,
-      to: leg.to!,
-      departLocal: `${addDays(leg.depart!.date, shift)}T${leg.depart!.time}`,
-      arriveLocal: `${addDays(leg.arrive!.date, shift)}T${leg.arrive!.time}`,
-      carrier: truncate(route.carrier, 40),
-      flightNo: leg.flightNo?.trim() || undefined,
-      durationMinutes: clampInt(leg.durationMinutes, 20, 1200),
-    }));
-
-    const broken = legs.findIndex((leg, i) => i > 0 && leg.from !== legs[i - 1].to);
-    if (broken > 0) {
-      warnings.push(`dropped ${label} (leg ${broken + 1} starts somewhere leg ${broken} did not reach)`);
-      return;
+    let returnLegs: FlightLeg[] | undefined;
+    if (route.direction === 'roundtrip') {
+      if (!route.returnLegs || route.returnLegs.length === 0) {
+        warnings.push(`dropped ${label} (a round trip with no way home)`);
+        return;
+      }
+      const homeward = prepareLegs(route.returnLegs, intake.endDate, route.carrier);
+      if (homeward.problem) {
+        warnings.push(`dropped ${label} (way home: ${homeward.problem})`);
+        return;
+      }
+      if (homeward.shifted && confidence === 'high') confidence = 'medium';
+      returnLegs = homeward.legs;
     }
 
     const connections = legs.length - 1;
@@ -160,6 +197,8 @@ export function buildFlightOptions(
       }
     }
 
+    // The advertised duration describes the outward journey; the way home carries its
+    // own times on its own legs.
     const flying = legs.reduce((acc, leg) => acc + leg.durationMinutes, 0);
     const ground = layovers.reduce((acc, minutes) => acc + minutes, 0);
 
@@ -167,16 +206,20 @@ export function buildFlightOptions(
     if (tight.length > 0) warnings.push(`${label}: connection under an hour`);
 
     const candidate = {
-      id: `flt_${route.direction === 'outbound' ? 'out' : 'ret'}_${slug(route.carrier, legs, taken)}`,
+      id: `flt_${{ outbound: 'out', return: 'ret', roundtrip: 'rt' }[route.direction]}_${slug(route.carrier, legs, taken)}`,
       kind: 'flight' as const,
       bucket: 'flights' as const,
-      title: routeTitle(route.carrier, legs),
+      title:
+        route.direction === 'roundtrip'
+          ? `${routeTitle(route.carrier, legs)} · round trip`
+          : routeTitle(route.carrier, legs),
       costCents: estimateFare(route.fareBandUsdPerPerson, daysAhead, intake.travelers),
       costBasis: 'per_person' as const,
       estimated: true,
       confidence,
       direction: route.direction,
       legs,
+      returnLegs,
       stops: connections,
       totalDurationMinutes: clampInt(flying + ground, flying, 4320),
       cabin: route.cabin ?? ('economy' as const),
@@ -189,20 +232,18 @@ export function buildFlightOptions(
   });
 
   for (const direction of ['outbound', 'return'] as const) {
-    if (!options.some((option) => option.direction === direction)) {
-      warnings.push(`no usable ${direction} routings`);
-    }
+    const covered = options.some(
+      (option) => option.direction === direction || option.direction === 'roundtrip',
+    );
+    if (!covered) warnings.push(`no usable ${direction} routings`);
   }
   if (options.length < FLIGHT_TARGET) {
     warnings.push(`asked for ${FLIGHT_TARGET} routings, kept ${options.length}`);
   }
 
-  options.sort((a, b) =>
-    a.direction === b.direction
-      ? a.costCents - b.costCents
-      : a.direction === 'outbound'
-        ? -1
-        : 1,
+  const order = { roundtrip: 0, outbound: 1, return: 2 } as const;
+  options.sort(
+    (a, b) => order[a.direction] - order[b.direction] || a.costCents - b.costCents,
   );
 
   return { options, warnings };

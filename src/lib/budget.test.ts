@@ -222,26 +222,51 @@ describe('applySelection', () => {
 describe('canSubmit', () => {
   const complete = ['flt_out', 'flt_back', 'lodg_a', 'act_a'];
 
-  it('passes once every required category is filled and the budget holds', () => {
-    expect(canSubmit(intake, catalog, complete)).toEqual({ ok: true, reasons: [] });
+  it('passes with nothing to say once the trip is whole and affordable', () => {
+    const check = canSubmit(intake, catalog, complete);
+    expect(check.ok).toBe(true);
+    expect(check.blockers).toEqual([]);
+    expect(check.warnings).toEqual([]);
   });
 
-  it('blocks on a missing return flight', () => {
+  /**
+   * Somebody driving to the coast, or staying with family, still has a trip worth
+   * planning. Missing travel or a missing bed is worth saying and not worth stopping
+   * for — only spending money you do not have is a real blocker.
+   */
+  it('warns about a missing flight home without stopping the trip', () => {
     const check = canSubmit(intake, catalog, ['flt_out', 'lodg_a', 'act_a']);
-    expect(check.ok).toBe(false);
-    expect(check.reasons).toContain('Pick a return flight.');
+    expect(check.ok).toBe(true);
+    expect(check.blockers).toEqual([]);
+    expect(check.warnings.join(' ')).toContain('flight home');
   });
 
-  it('blocks on missing lodging and missing activities, listing both', () => {
-    const check = canSubmit(intake, catalog, ['flt_out', 'flt_back']);
-    expect(check.ok).toBe(false);
-    expect(check.reasons).toHaveLength(2);
+  it('warns about a missing bed without stopping the trip', () => {
+    const check = canSubmit(intake, catalog, ['flt_out', 'flt_back', 'act_a']);
+    expect(check.ok).toBe(true);
+    expect(check.warnings.join(' ')).toMatch(/stay/i);
   });
 
-  it('blocks when the selection runs over budget', () => {
+  it('collects every warning at once when almost nothing is picked', () => {
+    const check = canSubmit(intake, catalog, []);
+    expect(check.ok).toBe(true);
+    expect(check.warnings).toHaveLength(4);
+    expect(check.blockers).toEqual([]);
+  });
+
+  it('blocks only on money, which is the one thing it cannot let pass', () => {
     const check = canSubmit({ ...intake, budgetTotal: 50_000 }, catalog, complete);
     expect(check.ok).toBe(false);
-    expect(check.reasons[0]).toContain('over budget');
+    expect(check.blockers).toHaveLength(1);
+    expect(check.blockers[0]).toContain('over budget');
+  });
+
+  it('treats a round trip as covering both directions', () => {
+    const roundTrip = { ...flight('flt_rt', 'outbound', 180_000), direction: 'roundtrip' as const };
+    const check = canSubmit(intake, [...catalog, roundTrip], ['flt_rt', 'lodg_a', 'act_a']);
+
+    expect(check.warnings.join(' ')).not.toContain('flight out');
+    expect(check.warnings.join(' ')).not.toContain('flight home');
   });
 
   it('allows a bucket to be over as long as the total is not', () => {
@@ -338,7 +363,7 @@ describe('budgets at the extremes', () => {
       catalog.map((option) => option.id),
     );
     expect(check.ok).toBe(false);
-    expect(check.reasons[0]).toContain('$0.01');
+    expect(check.blockers[0]).toContain('$0.01');
   });
 
   it('allows submission at exactly the budget', () => {

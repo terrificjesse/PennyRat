@@ -71,7 +71,9 @@ describe('the shape of the trip', () => {
       .filter((option) => ids.includes(option.id))
       .reduce((acc, option) => acc + option.costCents, 0);
 
-    expect(plan(ids).totalCents).toBe(expected);
+    // `chosenCents` is what the meter charged; `totalCents` also carries whatever the
+    // planner added to fill the days out.
+    expect(plan(ids).chosenCents).toBe(expected);
   });
 
   it('spreads lodging and local transport across the days they cover, to the cent', () => {
@@ -84,7 +86,9 @@ describe('the shape of the trip', () => {
       .reduce((acc, option) => acc + option.costCents, 0);
 
     const summed = itinerary.days.reduce((acc, day) => acc + day.daySpendCents, 0);
-    expect(summed).toBe(stay.costCents + transit.costCents + flights);
+    expect(summed).toBe(
+      stay.costCents + transit.costCents + flights + (itinerary.suggestedCents ?? 0),
+    );
   });
 });
 
@@ -243,18 +247,37 @@ describe('meals', () => {
     }
   });
 
-  it('never seats the same restaurant twice', () => {
+  /**
+   * Breakfast is allowed to repeat — the same cafe every morning is what people do, and
+   * a five-day trip does not need five distinct breakfasts. Lunch and dinner do not.
+   */
+  it('never serves the same place for lunch or dinner twice', () => {
     const itinerary = plan(everything);
-    const ids = allBlocks(itinerary)
-      .filter((block) => block.kind === 'meal')
+    const mains = allBlocks(itinerary)
+      .filter((block) => block.kind === 'meal' && !block.title.startsWith('Breakfast'))
       .map((block) => block.refId);
-    expect(new Set(ids).size).toBe(ids.length);
+
+    expect(new Set(mains).size).toBe(mains.length);
   });
 
-  it('serves at most two meals out per day', () => {
+  it('puts food on every day the traveler is there', () => {
+    const itinerary = plan(everything);
+    const onTheGround = itinerary.days.filter(
+      (day) => day.blocks.length > 0 && day.blocks.some((block) => block.kind !== 'flight'),
+    );
+
+    for (const day of onTheGround) {
+      expect(
+        day.blocks.some((block) => block.kind === 'meal'),
+        `${day.date} has nothing to eat`,
+      ).toBe(true);
+    }
+  });
+
+  it('serves at most three meals out per day', () => {
     const itinerary = plan(everything);
     for (const day of itinerary.days) {
-      expect(day.blocks.filter((block) => block.kind === 'meal').length).toBeLessThanOrEqual(2);
+      expect(day.blocks.filter((block) => block.kind === 'meal').length).toBeLessThanOrEqual(3);
     }
   });
 
@@ -283,12 +306,14 @@ describe('lodging', () => {
 });
 
 describe('awkward inputs', () => {
-  it('produces an empty but valid plan when nothing is selected', () => {
+  it('fills the days in itself when nothing is selected', () => {
     const itinerary = plan([]);
-    expect(itinerary.totalCents).toBe(0);
+
     expect(itinerary.days).toHaveLength(6);
-    expect(allBlocks(itinerary).every((block) => block.kind === 'free')).toBe(true);
-    expect(allBlocks(itinerary).every((block) => block.costCents === 0)).toBe(true);
+    expect(itinerary.chosenCents).toBe(0);
+    // Nothing picked is not nothing planned: the traveler gets a trip to edit down.
+    expect(allBlocks(itinerary).length).toBeGreaterThan(0);
+    expect(allBlocks(itinerary).every((block) => block.suggested)).toBe(true);
   });
 
   it('assumes the traveler is already there when no outbound flight is picked', () => {
@@ -445,15 +470,16 @@ describe('unscheduled reasons name the actual obstacle', () => {
  * both. Free time now says so in a block of its own.
  */
 describe('empty days say which kind of empty they are', () => {
-  it('marks an unbooked day on the ground as free time, not travel', () => {
+  it('leaves no day on the ground empty now that it fills them in', () => {
     const itinerary = plan([...base, 'act_sensoji']);
-    const quiet = itinerary.days.find(
-      (day) => day.date === '2026-10-16' && day.blocks.every((b) => b.kind === 'free'),
+    const ground = itinerary.days.filter(
+      (day) => day.date > '2026-10-12' && day.date < '2026-10-17',
     );
 
-    expect(quiet).toBeDefined();
-    expect(quiet!.blocks).toHaveLength(1);
-    expect(quiet!.blocks[0].kind).toBe('free');
+    for (const day of ground) {
+      expect(day.blocks.length, `${day.date} is empty`).toBeGreaterThan(0);
+      expect(day.blocks.every((block) => block.kind === 'free')).toBe(false);
+    }
   });
 
   it('leaves a day genuinely spent in the air with no blocks but the flight', () => {
@@ -486,15 +512,163 @@ describe('work is spread across the trip rather than piled at the front', () => 
     expect(daysUsed).toBeGreaterThanOrEqual(3);
   });
 
-  it('keeps the busiest and quietest day within one activity of each other', () => {
+  /**
+   * Only the whole days in the middle. The arrival day starts after a 14:40 landing and
+   * a 16:10 check-in, by which time most of Tokyo has shut, and the departure day ends
+   * before the run to the airport — both are legitimately short.
+   */
+  it('fills the whole days to eight hours', () => {
     const picks = ['act_sensoji', 'act_meiji_jingu', 'act_kappabashi', 'act_shinjuku_gyoen'];
     const itinerary = plan([...base, ...picks]);
 
-    const counts = itinerary.days
-      .filter((day) => day.blocks.some((block) => block.kind !== 'free'))
-      .map((day) => day.blocks.filter((block) => block.kind === 'activity').length)
-      .filter((count) => count > 0);
+    const middle = itinerary.days.filter(
+      (day) => day.date > '2026-10-13' && day.date < '2026-10-17',
+    );
 
-    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+    expect(middle.length).toBeGreaterThan(0);
+    for (const day of middle) {
+      expect(day.filledMinutes ?? 0, `${day.date} is thin`).toBeGreaterThanOrEqual(8 * 60);
+      expect(day.blocks.filter((block) => block.kind === 'activity').length).toBeGreaterThan(0);
+    }
+  });
+
+  it('offers more that would fit, so a day can be added to', () => {
+    const itinerary = plan([...base, 'act_sensoji']);
+    const middle = itinerary.days.filter(
+      (day) => day.date > '2026-10-13' && day.date < '2026-10-17',
+    );
+
+    expect(middle.some((day) => (day.couldAdd?.length ?? 0) > 0)).toBe(true);
+  });
+});
+
+/**
+ * Found by the end-to-end journey test on a one-night trip: land and leave on the same
+ * day and there are no nights to spread a room across, so the lodging cost fell out of
+ * the day totals while staying in the trip total.
+ */
+describe('a room paid for always lands on a day', () => {
+  it('charges a same-day stay to the one day on the ground', () => {
+    const oneNight = { ...intake, startDate: '2026-10-12', endDate: '2026-10-13' };
+    const itinerary = buildItinerary(oneNight, fixtureOptions, [OUTBOUND, STAY]);
+
+    const summed = itinerary.days.reduce((acc, day) => acc + day.daySpendCents, 0);
+    expect(summed).toBe(itinerary.totalCents);
+  });
+
+  it('still spreads a longer stay across its nights', () => {
+    const itinerary = plan([...base, 'tr_subway_pass']);
+    const charged = itinerary.days.filter((day) => day.daySpendCents > 0);
+
+    expect(charged.length).toBeGreaterThan(1);
+    expect(itinerary.days.reduce((acc, day) => acc + day.daySpendCents, 0)).toBe(
+      itinerary.totalCents,
+    );
+  });
+
+  it('charges nothing for lodging when none was picked', () => {
+    const itinerary = plan([OUTBOUND, RETURN]);
+    const summed = itinerary.days.reduce((acc, day) => acc + day.daySpendCents, 0);
+    expect(summed).toBe(itinerary.totalCents);
+  });
+});
+
+/**
+ * The planner now proposes a full day, so the traveler's main job is editing it down.
+ * A removal has to stick, or the next re-schedule puts it straight back.
+ */
+describe('editing the plan', () => {
+  it('never suggests something the traveler threw away', () => {
+    const first = plan([...base, 'act_sensoji']);
+    const suggested = allBlocks(first).find((block) => block.suggested && block.refId)!;
+
+    const after = buildItinerary(intake, fixtureOptions, [...base, 'act_sensoji'], [
+      suggested.refId!,
+    ]);
+
+    expect(allBlocks(after).map((block) => block.refId)).not.toContain(suggested.refId);
+  });
+
+  it('still honours something the traveler picked even if it is also excluded', () => {
+    const after = buildItinerary(intake, fixtureOptions, [...base, 'act_sensoji'], ['act_sensoji']);
+    expect(allBlocks(after).map((block) => block.refId)).toContain('act_sensoji');
+  });
+
+  it('offers alternatives for what it suggested, so a swap is possible', () => {
+    const itinerary = plan([...base, 'act_sensoji']);
+    const suggested = allBlocks(itinerary).filter((block) => block.suggested);
+
+    expect(suggested.length).toBeGreaterThan(0);
+    expect(suggested.some((block) => (block.alternatives?.length ?? 0) > 0)).toBe(true);
+  });
+
+  it('separates what the traveler committed to from what it added', () => {
+    const itinerary = plan([...base, 'act_sensoji']);
+    const chosen = fixtureOptions
+      .filter((option) => [...base, 'act_sensoji'].includes(option.id))
+      .reduce((acc, option) => acc + option.costCents, 0);
+
+    expect(itinerary.chosenCents).toBe(chosen);
+    expect(itinerary.suggestedCents).toBeGreaterThan(0);
+    expect(itinerary.totalCents).toBe(chosen + (itinerary.suggestedCents ?? 0));
+  });
+});
+
+describe('a round trip covers the whole journey', () => {
+  const ROUND = 'flt_rt_ua';
+
+  it('puts both ends of it on the plan', () => {
+    const itinerary = plan([ROUND, STAY]);
+    const flights = allBlocks(itinerary).filter((block) => block.refId === ROUND);
+
+    expect(flights).toHaveLength(2);
+    expect(flights[0].date).toBe('2026-10-12');
+    expect(flights[1].date).toBe('2026-10-17');
+  });
+
+  it('frames the trip from its outward arrival to its homeward departure', () => {
+    const itinerary = plan([ROUND, STAY, 'act_sensoji']);
+
+    for (const day of itinerary.days) {
+      for (const block of day.blocks) {
+        if (block.kind === 'flight') continue;
+        expect(day.date >= '2026-10-13', `${block.title} before landing`).toBe(true);
+        expect(day.date <= '2026-10-17', `${block.title} after leaving`).toBe(true);
+      }
+    }
+  });
+
+  it('charges once for both directions', () => {
+    const itinerary = plan([ROUND]);
+    const fare = fixtureFlights.find((flight) => flight.id === ROUND)!.costCents;
+    expect(itinerary.chosenCents).toBe(fare);
+  });
+
+  it('does not warn about a missing flight when one fare covers both ways', () => {
+    const itinerary = plan([ROUND, STAY]);
+    expect(itinerary.warnings.join(' ')).not.toMatch(/no outbound/i);
+  });
+});
+
+/** One fare buys both directions, and it is charged once. */
+describe('a round trip is one price', () => {
+  it('charges the fare on the way out and nothing on the way home', () => {
+    const itinerary = plan(['flt_rt_ua', STAY]);
+    const blocks = allBlocks(itinerary).filter((block) => block.refId === 'flt_rt_ua');
+    const fare = fixtureFlights.find((flight) => flight.id === 'flt_rt_ua')!.costCents;
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks.reduce((acc, block) => acc + block.costCents, 0)).toBe(fare);
+  });
+
+  it('keeps the day totals adding up to the trip total', () => {
+    const itinerary = plan(['flt_rt_ua', STAY, 'act_sensoji']);
+    const summed = itinerary.days.reduce((acc, day) => acc + day.daySpendCents, 0);
+    const unplaced = itinerary.unscheduled.reduce((acc, miss) => {
+      const option = fixtureOptions.find((candidate) => candidate.id === miss.id);
+      return acc + (option?.costCents ?? 0);
+    }, 0);
+
+    expect(summed).toBe(itinerary.totalCents - unplaced);
   });
 });

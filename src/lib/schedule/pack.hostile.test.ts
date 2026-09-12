@@ -22,6 +22,9 @@ function minutes(value: string): number {
 function assertSound(itinerary: Itinerary, note: string): void {
   expect(itinerarySchema.safeParse(itinerary).success, `${note}: contract`).toBe(true);
   expect(itinerary.totalCents, `${note}: total`).toBeGreaterThanOrEqual(0);
+  expect(itinerary.totalCents, `${note}: total is chosen plus suggested`).toBe(
+    (itinerary.chosenCents ?? 0) + (itinerary.suggestedCents ?? 0),
+  );
 
   for (const day of itinerary.days) {
     expect(day.daySpendCents, `${note}: ${day.date} spend`).toBeGreaterThanOrEqual(0);
@@ -166,7 +169,7 @@ describe('options that are individually absurd', () => {
 
   it('survives a free option with no cost at all', () => {
     const plan = buildItinerary(intake, fixtureOptions, ['act_sensoji', 'act_meiji_jingu']);
-    expect(plan.totalCents).toBe(0);
+    expect(plan.chosenCents).toBe(0);
     assertSound(plan, 'all free');
   });
 
@@ -222,7 +225,7 @@ describe('random selections all produce a sound plan', () => {
       const expected = fixtureOptions
         .filter((option) => picked.includes(option.id))
         .reduce((acc, option) => acc + option.costCents, 0);
-      expect(plan.totalCents, `run ${run}: total matches the basket`).toBe(expected);
+      expect(plan.chosenCents, `run ${run}: chosen matches the basket`).toBe(expected);
     }
   });
 

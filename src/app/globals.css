@@ -196,6 +196,11 @@ textarea {
   font: inherit;
 }
 
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
 ::selection {
   background: var(--primary-soft);
   color: var(--foreground);
@@ -232,6 +237,8 @@ textarea {
 
   body {
     background: #ffffff;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .no-print {
@@ -240,6 +247,11 @@ textarea {
 
   .print-itinerary {
     font-size: 10pt;
+    width: 100%;
+  }
+
+  .print-itinerary li {
+    break-inside: avoid;
   }
 
   .itinerary-day > div:first-child {

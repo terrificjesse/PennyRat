@@ -35,7 +35,7 @@ export const rawActivitySchema = z.object({
 
 export type RawActivity = z.infer<typeof rawActivitySchema>;
 
-export const ACTIVITY_TARGET = 16;
+export const ACTIVITY_TARGET = 22;
 
 export const activitySystem = [
   'You are a travel researcher who knows specific, real, currently-open venues in the',
@@ -58,7 +58,13 @@ export function buildActivityPrompt(intake: TripIntake, budget: BudgetPlan): str
     'Hard requirements on the set you return:',
     `- Exactly ${ACTIVITY_TARGET} entries. Not "around" ${ACTIVITY_TARGET}.`,
     `- At least 2 entries for each of these interests: ${intake.interests.join(', ')}.`,
-    '- At least 3 with category "restaurant" and at least 2 with category "museum".',
+    '- At least 10 with category "restaurant". Three meals a day across a whole trip',
+    '  needs the supply, so this is a floor rather than a suggestion.',
+    '- Of those, at least 2 must open by 08:00 and suit breakfast — a bakery, a coffee',
+    '  house, a market stall, whatever people there actually eat in the morning.',
+    '- Spread the restaurants across neighbourhoods rather than clustering them, so a',
+    '  day spent in one part of the city can eat near where it already is.',
+    '- At least 2 with category "museum".',
     '- At least 4 that cost under $15 per person, at least 6 between $15 and $50,',
     '  and at least 3 over $50. Free entries count toward the first group.',
     '- No two entries in the same building or chain.',

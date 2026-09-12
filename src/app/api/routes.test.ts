@@ -149,8 +149,9 @@ describe('the schedule route survives a hostile payload', () => {
     );
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { itinerary: { totalCents: number } };
-    expect(body.itinerary.totalCents).toBe(0);
+    const body = (await response.json()) as { itinerary: { chosenCents: number } };
+    // Nothing the traveler chose was charged for; the planner still fills the days.
+    expect(body.itinerary.chosenCents).toBe(0);
   });
 
   it('accepts an empty selection', async () => {
@@ -172,12 +173,15 @@ describe('the schedule route survives a hostile payload', () => {
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
-      itinerary: { days: { blocks: { refId?: string }[] }[] };
+      itinerary: { days: { blocks: { refId?: string; suggested?: boolean }[] }[] };
     };
     const placed = body.itinerary.days
       .flatMap((day) => day.blocks)
       .filter((block) => block.refId === 'act_sensoji');
-    expect(placed).toHaveLength(1);
+    // Selecting it five hundred times still books it once; the planner may reuse a
+    // free place on another day, which is deliberate padding rather than a duplicate.
+    expect(placed.length).toBeGreaterThanOrEqual(1);
+    expect(placed.filter((block) => !block.suggested)).toHaveLength(1);
   });
 
   it('handles a large catalogue without falling over', async () => {

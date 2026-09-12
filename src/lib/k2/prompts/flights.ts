@@ -23,9 +23,11 @@ export const rawFlightLegSchema = z.object({
 });
 
 export const rawFlightRouteSchema = z.object({
-  direction: z.enum(['outbound', 'return']),
+  direction: z.enum(['outbound', 'return', 'roundtrip']),
   carrier: z.string().min(2).max(40),
   legs: z.array(rawFlightLegSchema).min(1).max(4),
+  /** Only for a roundtrip: the way home. */
+  returnLegs: optionalish(z.array(rawFlightLegSchema).min(1).max(4)),
   layoverMinutes: optionalish(z.array(z.number().int().min(0).max(1500)).max(3)),
   fareBandUsdPerPerson: z.object({
     low: z.number().min(20).max(20000),
@@ -40,6 +42,7 @@ export const rawFlightRouteSchema = z.object({
 export type RawFlightRoute = z.infer<typeof rawFlightRouteSchema>;
 
 export const FLIGHT_TARGET = 10;
+export const ROUNDTRIP_TARGET = 4;
 
 export const flightSystem = [
   'You are an airline route analyst. You know which carriers operate which city pairs,',
@@ -56,9 +59,14 @@ export function buildFlightPrompt(intake: TripIntake): string {
     `Party of ${intake.travelers}, economy.`,
     '',
     'Hard requirements:',
-    `- Exactly ${FLIGHT_TARGET} routings: 5 with direction "outbound" and 5 with direction "return".`,
-    `- Outbound routings depart ${intake.origin} on ${intake.startDate}.`,
-    `- Return routings depart ${intake.destination} on ${intake.endDate}.`,
+    `- Exactly ${FLIGHT_TARGET} entries: ${ROUNDTRIP_TARGET} with direction "roundtrip",`,
+    `  then 3 with direction "outbound" and 3 with direction "return".`,
+    '- A "roundtrip" is a single fare covering both directions. Put the outward journey',
+    '  in "legs" and the way home in "returnLegs", and price the whole thing in',
+    '  "fareBandUsdPerPerson". Round trips are normally cheaper than the two one-ways',
+    '  added together — price them as the airline actually sells them, not as a sum.',
+    `- Outward journeys depart ${intake.origin} on ${intake.startDate}.`,
+    `- Ways home depart ${intake.destination} on ${intake.endDate}.`,
     '- In each direction, include at least one nonstop if the pair has one, and at least',
     '  two routings with a connection. Vary the carrier and the connecting hub.',
     '- Order each direction cheapest first.',
@@ -82,7 +90,7 @@ export function buildFlightPrompt(intake: TripIntake): string {
     'Schema for each array element:',
     JSON.stringify(
       {
-        direction: 'outbound | return',
+        direction: 'roundtrip | outbound | return',
         carrier: 'string',
         legs: [
           {
@@ -94,6 +102,7 @@ export function buildFlightPrompt(intake: TripIntake): string {
             flightNo: 'string (optional)',
           },
         ],
+        returnLegs: ['same shape as legs — roundtrip only'],
         layoverMinutes: ['number (optional, one per connection)'],
         fareBandUsdPerPerson: { low: 'number', typical: 'number', high: 'number' },
         cabin: 'economy',

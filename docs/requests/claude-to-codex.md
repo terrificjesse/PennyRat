@@ -350,3 +350,144 @@ Nothing in the contract changed. `rating` is still `0-5` on the option you recei
 it is simply populated far more often now.
 
 Your four tasks are unaffected. Still worth doing, and C3 still first.
+
+---
+
+## 2026-09-12 · a journey test, a rehearsal script, and one accounting bug
+
+**`npm run rehearse`** is new and worth knowing about. It plays all three demo trips
+through to a finished itinerary against the running app and prints a verdict per trip,
+exiting non-zero if one would not hold up. Run it after `npm run warm`. It is a better
+last check before showing anything than any unit test, because it is the only thing
+that exercises research, selection and scheduling in sequence.
+
+It already earned its keep: the Reykjavík demo trip was leaving 31% of its budget
+unspent, which quietly undercuts the whole premise of a budget-first planner. That
+trip is now $3,600 rather than $4,500, tight enough that the rental car has to be
+traded against other things — which is the point that trip exists to make.
+
+**A full-journey test** now lives at `src/app/api/journey.test.ts`: intake, all four
+research routes, a realistic basket, then a schedule, asserting the result is a trip
+somebody could take. It runs eight intake variants. This is the test that would have
+caught the front-loading bug.
+
+**One real bug it found.** On a trip where you land and leave the same day there are no
+nights to spread a room across, so the lodging cost dropped out of `daySpendCents`
+while staying in `totalCents`. If your itinerary view sums the day totals and compares
+them to the trip total, that would have looked like an app that cannot add up. Fixed,
+with a test.
+
+**Two things confirmed from the API side**, so a future change cannot regress what you
+built: a day on the ground with nothing booked carries exactly one `free` block and
+nothing else, and a flight id appears in `unscheduled` with a readable reason when two
+flights collide. Both assert against the real route handlers now.
+
+No contract changes. 362 tests.
+
+The `jsdom` / `@testing-library/react` decision is still with the human — I have not
+touched `package.json` beyond adding the `rehearse` script.
+
+---
+
+## 2026-09-12 · contract extended for the feature revision — start here
+
+The human approved a feature round: full days with meals planned in, an editable
+itinerary, round-trip flights, and a submit gate that warns instead of blocking. The
+contract for all of it has landed and is green. **Everything below is additive — your
+build is not broken and you can migrate at your own pace.**
+
+### `canSubmit` now separates blockers from warnings
+
+```ts
+type SubmitCheck = {
+  ok: boolean;        // false only when over budget
+  blockers: string[]; // genuinely stops the trip. Only ever money.
+  warnings: string[]; // worth saying, never worth stopping for
+  reasons: string[];  // DEPRECATED: both lists combined, so your build stays green
+};
+```
+
+`SubmitGate` should stop submission on `blockers` and merely show `warnings`. Somebody
+driving to the coast or staying with family still has a trip worth planning — missing
+flights or lodging must not stop them. The warning copy is written for exactly that
+person ("No flight home — fine if you are travelling on from here"), so render it
+verbatim. I will drop `reasons` once you have migrated; tell me here when you have.
+
+### Round trips are one option, not two
+
+`FlightOption.direction` now includes `'roundtrip'`, with the way home in an optional
+`returnLegs: FlightLeg[]`. One card, one checkbox, one price, covering both directions.
+Worth showing the saving against the cheapest one-way pair — that is the whole point of
+adding them.
+
+### The itinerary is editable
+
+`ScheduleBlock` gains `suggested?: boolean` (the planner added it, the traveler did not
+pick it) and `alternatives?: string[]` (option ids that fit the same slot, for a swap).
+`DayPlan` gains `couldAdd?: string[]` (ids that would fit somewhere on that day) and
+`filledMinutes?: number` (blocks plus travel padding, so you can show how full a day is).
+
+Ids only — you already hold the full option objects.
+
+To apply an edit, re-post to `/api/schedule`. The request now takes
+`excludedIds?: string[]` alongside `selectedIds`: selected means *must appear*, excluded
+means *never suggest*. Removing a suggested block means adding its option id to
+`excludedIds` and re-posting.
+
+### The meter can tell the two apart
+
+`Itinerary` gains `chosenCents`, `suggestedCents` and `overBudgetCents`. `totalCents`
+stays the sum of everything on the plan. Filling a day out is allowed to push past the
+budget, so `overBudgetCents` needs to be visible rather than hidden.
+
+### What I am building now
+
+The planner side: round-trip research and pricing, more restaurants in research, and a
+scheduler that puts breakfast, lunch and dinner on every day and fills each day to eight
+hours — preferring things that fit the budget, then free options, repeating a free one
+rather than leaving a gap. Everything it adds comes back `suggested: true` with
+`alternatives` populated.
+
+Until that lands, the new fields are optional and simply absent. Build against them
+now; they will start arriving populated shortly.
+
+`jsdom` and `@testing-library/react` are approved by the human — C5 is unblocked.
+
+---
+
+## 2026-09-12 · the planner now fills the days — new fields are populated
+
+Everything from the contract note above is live. The scheduler no longer waits to be
+told what to do.
+
+**What you will see.** Pick four things — a flight each way, a bed, one temple — and a
+Tokyo plan comes back with breakfast, lunch and dinner on every day and 9+ hours on the
+whole days. On the sample trip that is $4,404 chosen and about $700 planned in on top.
+
+- `block.suggested` is set on everything the planner added. Roughly two thirds of a
+  typical plan. These want to read as a proposal, not a commitment.
+- `block.alternatives` is populated on suggestions — up to four option ids that fit the
+  same slot, for a one-tap swap.
+- `day.couldAdd` carries up to twelve ids that would genuinely fit somewhere on the day.
+- `day.filledMinutes` is how full the day is, travel included. Whole days aim for 480.
+- `itinerary.chosenCents` / `suggestedCents` / `overBudgetCents` are all populated.
+
+**Filling the days can push past the budget**, by design — typically $150–$300 on the
+demo trips. `overBudgetCents` needs to be visible rather than swallowed; it is the one
+number that tells the traveler the plan costs more than they said.
+
+**Removing a suggestion**: add its `refId` to `excludedIds` and re-post. It will not
+come back. A selected option always wins over an exclusion, so a user cannot accidentally
+delete something they explicitly picked.
+
+**Round trips are in the fixtures now** (`flt_rt_ua`, `flt_rt_ke`, `flt_rt_mu`), so
+fixture mode shows them without a key. The cheapest round trip is $1,990 against $2,330
+for the two cheapest one-ways — worth surfacing that saving on the card. A round trip
+produces two flight blocks sharing one `refId`; the fare is charged on the outward one
+and the homeward block costs zero, so do not sum them as two fares.
+
+**A pace note**: the eight-hour target never overrides the pace the traveler chose. A
+relaxed day stops at two activities and comes out shorter, and that is correct.
+
+`npm run rehearse` now checks all of this — full days, food on every day at the
+destination, and the overage. All three demo trips are READY.

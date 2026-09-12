@@ -6,11 +6,24 @@
 npm install
 npm run dev          # leave running
 npm run warm         # in a second terminal
+npm run rehearse     # then this
 ```
 
 `warm` pre-fetches research for the three demo trips. After it finishes, everything
 comes back from `.k2cache/` in single-digit milliseconds instead of 4–11 seconds. Run
 it again and every line should say `cache` — that is your green light.
+
+`rehearse` then plays all three trips through to a finished itinerary and prints a
+verdict per trip. It is the check worth trusting on the morning: it fails if research
+comes back thin, if the cheapest realistic trip will not fit the budget, if too little
+ends up scheduled, or if a budget is so generous it stops forcing any choices. It exits
+non-zero when a trip would embarrass you, so it can gate a deploy.
+
+```
+  READY   ORD → Tokyo
+  READY   SFO → Mexico City
+  READY   JFK → Reykjavík
+```
 
 If the API is down, the key is missing, or the venue wifi eats the request, the app
 serves the bundled Tokyo sample trip and says so in the research notice. **The demo
@@ -36,13 +49,17 @@ Each one is chosen to show a different shape of problem, not a different nice ci
 |---|---|
 | **ORD → Tokyo**, 12–17 Oct, 2 people, $6,000 | A red-eye that eats a night, and a city where half the museums shut one day a week. |
 | **SFO → Mexico City**, 3–8 Dec, 2 people, $2,600 | A tight budget where a $150-a-head tasting menu is a real tradeoff against three other days of eating. |
-| **JFK → Reykjavík**, 10–15 Feb, 2 people, $4,500 | The local transport budget doing actual work: a rental car costs twelve times the bus pass. |
+| **JFK → Reykjavík**, 10–15 Feb, 2 people, $3,600 | The local transport budget doing actual work: a rental car costs twelve times the bus pass. |
 
 The Tokyo budget is $6,000 rather than a rounder $4,200 for a reason worth knowing if
 anyone asks: live research returns real fares, and a real ORD–Tokyo round trip for two
-is about $3,900. At $4,200 the only completable trip was a hostel and four free
-temples. `src/fixtures/fixtures.test.ts` now fails if the budget stops leaving room for
-a mid-tier stay and a full week of doing things.
+runs $4,400. At $4,200 the only completable trip was a hostel and four free temples.
+`src/fixtures/fixtures.test.ts` now fails if the budget stops leaving room for a
+mid-tier stay and a full week of doing things.
+
+Researching round trips saves about $700 against buying two one-ways, which is real,
+but the model's absolute fare estimates move enough between runs that $6,000 is still
+the right ceiling.
 
 ## Five minutes
 
@@ -74,12 +91,22 @@ ryokan. Then, on Reykjavík, open the transport step: the bus pass, and the rent
 at twelve times the price — with the Hvalfjörður tunnel toll and the airport shuttle
 exclusion called out. It knows the tunnel toll.
 
-**6 — The schedule (90s).** Submit unlocks once the trip is within budget and has a
-flight each way, a bed, and something to do.
+**6 — The schedule (90s).** Submit unlocks as soon as the trip is within budget.
+Missing flights or a missing bed are warnings, not blocks — somebody driving to the
+coast still has a trip worth planning.
+
+The plan arrives full rather than empty. Pick four things and the planner returns
+breakfast, lunch and dinner on every day plus eight hours of activity, each suggested
+block marked as its proposal rather than your commitment, with alternatives to swap to
+and more to add. The traveler edits down instead of building up.
 
 The itinerary is **not** a model call. It is deterministic code, and this is the part
 worth slowing down for:
 
+- Every whole day carries three meals and around eight hours, filled in by the planner.
+- Breakfast may repeat — the same cafe every morning is what people do — while lunch
+  and dinner never do.
+- A round trip is one fare covering both directions, and it undercuts the two one-ways.
 - The departure day holds nothing but the flight — you are in the air.
 - The arrival day starts 90 minutes after landing, not at 9am.
 - The last day ends 150 minutes before takeoff, and check-out moves earlier to match
@@ -114,7 +141,7 @@ guessed. It is also the only part of the app with no variance between runs.
 **"How long does research take?"** Four to eleven seconds a call, three calls in
 parallel. Cached, it is instant — which is why we warm it before demoing.
 
-**"How do you know it works?"** 329 tests. The ones worth naming: no API route can
+**"How do you know it works?"** 380 tests, plus `npm run rehearse`, which plays all three demo trips through to a finished itinerary and fails if any of them would not hold up. The ones worth naming: no API route can
 answer 5xx under any malformed body; a randomised sweep of 200 selections asserts the
 schedule never overlaps itself, never breaks its contract and never places a venue
 outside its hours; and checking and unchecking fifty times returns the budget to
@@ -122,7 +149,7 @@ exactly where it started.
 
 ## Numbers worth having ready
 
-- **329 tests**, across budget arithmetic, model-output parsing, the K2 client's
+- **380 tests**, across budget arithmetic, model-output parsing, the K2 client's
   failure modes, the API contract and the scheduler.
 - **Integer cents everywhere** — check and uncheck fifty times and the remainder is
   exactly what it started at.

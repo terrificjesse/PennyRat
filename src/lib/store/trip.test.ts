@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { StateStorage } from "zustand/middleware";
 import {
   fixtureFlights,
   fixtureIntake,
@@ -6,11 +7,22 @@ import {
   fixtureTransit,
 } from "@/fixtures";
 import { allocateBuckets, setBucket } from "@/lib/budget";
-import { FIRST_TRIP_STEP, LAST_TRIP_STEP, useTripStore } from "./trip";
+import {
+  createTripStorage,
+  FIRST_TRIP_STEP,
+  LAST_TRIP_STEP,
+  useTripStore,
+} from "./trip";
+
+const defaultStorage = useTripStore.persist.getOptions().storage;
 
 describe("trip store", () => {
   beforeEach(() => {
     useTripStore.getState().resetTrip();
+  });
+
+  afterEach(() => {
+    useTripStore.persist.setOptions({ storage: defaultStorage });
   });
 
   it("allocates a fresh budget when intake is saved", () => {
@@ -171,5 +183,40 @@ describe("trip store", () => {
 
     expect(merged?.selectedIds).toEqual([fixtureFlights[0].id]);
     expect(merged?.itinerary).toBeNull();
+  });
+
+  it("keeps working in memory when localStorage exceeds its quota", () => {
+    const quotaStorage: StateStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new DOMException("Storage quota exceeded.", "QuotaExceededError");
+      },
+      removeItem: () => undefined,
+    };
+    useTripStore.persist.setOptions({
+      storage: createTripStorage(() => quotaStorage),
+    });
+
+    expect(() => useTripStore.getState().setIntake(fixtureIntake)).not.toThrow();
+    expect(useTripStore.getState().intake).toEqual(fixtureIntake);
+    expect(useTripStore.getState().budgetPlan).toEqual(allocateBuckets(fixtureIntake));
+  });
+
+  it("hydrates a fresh trip when the localStorage getter throws", async () => {
+    useTripStore.getState().resetTrip();
+    useTripStore.persist.setOptions({
+      storage: createTripStorage(() => {
+        throw new DOMException("Storage access denied.", "SecurityError");
+      }),
+    });
+
+    await expect(Promise.resolve(useTripStore.persist.rehydrate())).resolves.toBeUndefined();
+    expect(useTripStore.getState()).toMatchObject({
+      intake: null,
+      budgetPlan: null,
+      selectedIds: [],
+      currentStep: FIRST_TRIP_STEP,
+      itinerary: null,
+    });
   });
 });

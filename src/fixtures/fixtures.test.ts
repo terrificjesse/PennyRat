@@ -67,9 +67,28 @@ describe('flight fixtures', () => {
     for (const flight of fixtureFlights) {
       const depart = flight.legs[0].departLocal.slice(0, 10);
       const expected =
-        flight.direction === 'outbound' ? fixtureIntake.startDate : fixtureIntake.endDate;
+        flight.direction === 'return' ? fixtureIntake.endDate : fixtureIntake.startDate;
       expect(depart, flight.id).toBe(expected);
+
+      // A round trip carries the way home itself, and that leaves on the last day.
+      if (flight.direction === 'roundtrip') {
+        expect(flight.returnLegs, flight.id).toBeDefined();
+        expect(flight.returnLegs![0].departLocal.slice(0, 10)).toBe(fixtureIntake.endDate);
+      }
     }
+  });
+
+  it('offers a round trip that undercuts buying the two one-ways', () => {
+    const cheapest = (list: typeof fixtureFlights) =>
+      Math.min(...list.map((flight) => flight.costCents));
+
+    const pair =
+      cheapest(fixtureFlights.filter((f) => f.direction === 'outbound')) +
+      cheapest(fixtureFlights.filter((f) => f.direction === 'return'));
+    const roundTrips = fixtureFlights.filter((f) => f.direction === 'roundtrip');
+
+    expect(roundTrips.length).toBeGreaterThanOrEqual(1);
+    expect(cheapest(roundTrips)).toBeLessThan(pair);
   });
 });
 

@@ -1,7 +1,12 @@
 "use client";
 
 import { create } from "zustand";
-import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
+import {
+  createJSONStorage,
+  persist,
+  type PersistStorage,
+  type StateStorage,
+} from "zustand/middleware";
 import { z } from "zod";
 import { fixtureOptions } from "@/fixtures";
 import { allocateBuckets, setBucket } from "@/lib/budget";
@@ -59,7 +64,38 @@ const serverStorage: StateStorage = {
   removeItem: () => undefined,
 };
 
-const storage = createJSONStorage<PersistedTripState>(() =>
+export function createTripStorage(
+  getStorage: () => StateStorage,
+): PersistStorage<PersistedTripState> {
+  const resilientStorage: StateStorage = {
+    getItem: (name) => {
+      try {
+        return getStorage().getItem(name);
+      } catch {
+        return null;
+      }
+    },
+    setItem: (name, value) => {
+      try {
+        getStorage().setItem(name, value);
+      } catch {
+        // Persistence is an enhancement; the in-memory trip must remain usable.
+      }
+    },
+    removeItem: (name) => {
+      try {
+        getStorage().removeItem(name);
+      } catch {
+        // A blocked storage backend should not prevent starting a fresh trip.
+      }
+    },
+  };
+  const jsonStorage = createJSONStorage<PersistedTripState>(() => resilientStorage);
+  if (!jsonStorage) throw new Error("Could not initialize trip storage.");
+  return jsonStorage;
+}
+
+const storage = createTripStorage(() =>
   typeof window === "undefined" ? serverStorage : window.localStorage,
 );
 
