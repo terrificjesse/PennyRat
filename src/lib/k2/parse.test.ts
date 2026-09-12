@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { rawActivitySchema } from './prompts/activities';
+import { rawTransitSchema } from './prompts/transit';
 import {
   clampInt,
   dedupeByTitle,
@@ -226,5 +228,58 @@ describe('salvaging a broken reply', () => {
     const raw = '<think>maybe {"name":"idea","cost":1}</think>[{"name":"real","cost":2}]';
     const result = parseModelItems(raw, itemSchema);
     expect(result.items.map((item) => item.name)).toEqual(['real']);
+  });
+});
+
+/**
+ * Taken from a live Reykjavik reply that returned sixteen perfectly good venues and
+ * lost every one of them. The model writes `"rating": null` for a field it does not
+ * know; Zod's `.optional()` accepts a missing key but rejects an explicit null, so
+ * one unknown rating per entry was enough to empty the batch.
+ */
+describe('optional fields the model filled with null', () => {
+  it('accepts null, a missing key, and a real value alike', () => {
+    const hours = { mon: [{ open: '09:00', close: '17:00' }] };
+    const venue = {
+      name: 'Hallgrimskirkja',
+      category: 'attraction',
+      neighborhood: 'City Center',
+      description: 'The church tower gives the widest view over the coloured roofs.',
+      costUsdPerPerson: 10,
+      durationMinutes: 45,
+      openingHours: hours,
+      bookingRequired: false,
+      interests: ['tourist'],
+      bestTimeOfDay: 'any',
+      confidence: 'high',
+    };
+
+    const withNulls = rawActivitySchema.safeParse({
+      ...venue,
+      rating: null,
+      reviewCount: null,
+      sensoryNotes: null,
+      closedDates: null,
+    });
+    expect(withNulls.success).toBe(true);
+    expect(withNulls.success && withNulls.data.rating).toBeUndefined();
+
+    expect(rawActivitySchema.safeParse(venue).success).toBe(true);
+
+    const withValues = rawActivitySchema.safeParse({ ...venue, rating: 4.5, reviewCount: 900 });
+    expect(withValues.success && withValues.data.rating).toBe(4.5);
+  });
+
+  it('still rejects a value of the wrong type', () => {
+    const base = {
+      mode: 'transit_pass',
+      name: 'Straeto',
+      perDayUsdForParty: 10,
+      description: 'Buses across the capital area, every twenty minutes.',
+      confidence: 'medium',
+    };
+
+    expect(rawTransitSchema.safeParse({ ...base, coverageNote: null }).success).toBe(true);
+    expect(rawTransitSchema.safeParse({ ...base, coverageNote: 42 }).success).toBe(false);
   });
 });

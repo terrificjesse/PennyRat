@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { TripIntake } from '../../types';
-import { JSON_DISCIPLINE, describeTripDates, rawConfidenceSchema } from './common';
+import { JSON_DISCIPLINE, describeTripDates, optionalish, rawConfidenceSchema } from './common';
 
 /**
  * Prompt B: flight structure, not prices.
@@ -19,20 +19,20 @@ export const rawFlightLegSchema = z.object({
   departLocal: z.string().min(10).max(25),
   arriveLocal: z.string().min(10).max(25),
   durationMinutes: z.number().int().min(20).max(1200),
-  flightNo: z.string().max(10).optional(),
+  flightNo: optionalish(z.string().max(10)),
 });
 
 export const rawFlightRouteSchema = z.object({
   direction: z.enum(['outbound', 'return']),
   carrier: z.string().min(2).max(40),
   legs: z.array(rawFlightLegSchema).min(1).max(4),
-  layoverMinutes: z.array(z.number().int().min(0).max(1500)).max(3).optional(),
+  layoverMinutes: optionalish(z.array(z.number().int().min(0).max(1500)).max(3)),
   fareBandUsdPerPerson: z.object({
     low: z.number().min(20).max(20000),
     typical: z.number().min(20).max(20000),
     high: z.number().min(20).max(20000),
   }),
-  cabin: z.enum(['economy', 'premium', 'business']).optional(),
+  cabin: optionalish(z.enum(['economy', 'premium', 'business'])),
   baggageIncluded: z.boolean(),
   confidence: rawConfidenceSchema,
 });

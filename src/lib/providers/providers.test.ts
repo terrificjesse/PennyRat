@@ -486,3 +486,66 @@ describe('falling back when research cannot run', () => {
     expect(result.options[0].costCents).toBe(result.options[0].perDayCents * 3);
   });
 });
+
+/**
+ * From a live Reykjavik reply that tagged every hike "outdoor" and "nature". The
+ * strict enum rejected each one, so a hiking trip came back with no hiking.
+ */
+describe('interest tags the model invented', () => {
+  it('maps outdoor and nature onto hiking instead of dropping the venue', () => {
+    const hike = activity({
+      name: 'Reykjadalur hot spring trail',
+      category: 'outdoor',
+      interests: ['outdoor', 'nature'] as never,
+    });
+    const { options } = buildActivityOptions([hike], intake, budget);
+
+    expect(options).toHaveLength(1);
+    expect(options[0].interests).toEqual(['hiking']);
+  });
+
+  it('reads sightseeing as tourist and cultural as history', () => {
+    const { options } = buildActivityOptions(
+      [activity({ interests: ['sightseeing', 'cultural'] as never })],
+      intake,
+      budget,
+    );
+    expect(options[0].interests).toEqual(['tourist', 'history']);
+  });
+
+  it('tolerates spacing and capitalisation', () => {
+    const { options } = buildActivityOptions(
+      [activity({ interests: ['Family Friendly', ' ART '] as never })],
+      intake,
+      budget,
+    );
+    expect(options[0].interests).toEqual(['family', 'art']);
+  });
+
+  it('falls back to what the category implies when no tag is recognisable', () => {
+    const { options } = buildActivityOptions(
+      [activity({ category: 'restaurant', interests: ['gourmet_experience'] as never })],
+      intake,
+      budget,
+    );
+    expect(options[0].interests).toEqual(['food']);
+  });
+
+  it('does not repeat an interest reached by two different words', () => {
+    const { options } = buildActivityOptions(
+      [activity({ interests: ['museum', 'heritage', 'history'] as never })],
+      intake,
+      budget,
+    );
+    expect(options[0].interests).toEqual(['history']);
+  });
+
+  it('keeps a venue whose tags were already correct', () => {
+    const { options } = buildActivityOptions(
+      [activity({ interests: ['food', 'tourist'] as never })],
+      intake,
+      budget,
+    );
+    expect(options[0].interests).toEqual(['food', 'tourist']);
+  });
+});

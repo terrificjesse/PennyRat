@@ -79,6 +79,25 @@ export function usd(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString('en-US')}`;
 }
 
+/**
+ * An optional field as a model actually writes it.
+ *
+ * Asked for a field it does not know, the model writes `"rating": null` rather than
+ * leaving the key out. Zod's `.optional()` accepts a missing key but rejects an
+ * explicit null, so a single unknown rating would fail the whole entry — and with
+ * sixteen entries written the same way, the whole batch. This accepts either and
+ * hands the providers a plain `undefined`.
+ */
+export function optionalish<T extends z.ZodTypeAny>(schema: T) {
+  // The trailing .optional() is what keeps the key optional in the inferred type —
+  // a bare transform makes it required-but-possibly-undefined, which every caller
+  // then has to spell out.
+  return schema
+    .nullish()
+    .transform((value) => value ?? undefined)
+    .optional();
+}
+
 /** A time the model wrote, before the providers normalize it. */
 const looseTime = z.string().min(3).max(8);
 

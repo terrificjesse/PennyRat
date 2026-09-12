@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { activityCategorySchema, interestSchema, type BudgetPlan, type TripIntake } from '../../types';
+import { activityCategorySchema, type BudgetPlan, type TripIntake } from '../../types';
 import {
   HOURS_SHAPE,
   JSON_DISCIPLINE,
+  optionalish,
   describeParty,
   describeTripDates,
   rawConfidenceSchema,
@@ -20,13 +21,14 @@ export const rawActivitySchema = z.object({
   costUsdPerPerson: z.number().min(0).max(2000),
   durationMinutes: z.number().int().min(15).max(720),
   openingHours: rawOpeningHoursSchema,
-  closedDates: z.array(z.string()).max(20).optional(),
+  closedDates: optionalish(z.array(z.string()).max(20)),
   bookingRequired: z.boolean(),
-  interests: z.array(interestSchema).min(1).max(6),
-  sensoryNotes: z.string().max(300).optional(),
+  /** Free text: the model invents tags like "outdoor" and "nature". Mapped in the provider. */
+  interests: z.array(z.string().max(40)).min(1).max(8),
+  sensoryNotes: optionalish(z.string().max(300)),
   bestTimeOfDay: z.enum(['morning', 'afternoon', 'evening', 'any']),
-  rating: z.number().min(0).max(5).optional(),
-  reviewCount: z.number().int().min(0).optional(),
+  rating: optionalish(z.number().min(0).max(5)),
+  reviewCount: optionalish(z.number().int().min(0)),
   confidence: rawConfidenceSchema,
 });
 

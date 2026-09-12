@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import type { BudgetPlan, TripIntake } from '../../types';
-import { JSON_DISCIPLINE, describeParty, describeTripDates, rawConfidenceSchema, usd } from './common';
+import {
+  JSON_DISCIPLINE,
+  describeParty,
+  describeTripDates,
+  optionalish,
+  rawConfidenceSchema,
+  usd,
+} from './common';
 
 /** Prompt C: where to sleep, across the whole comfort range. */
 
@@ -11,9 +18,9 @@ export const rawLodgingSchema = z.object({
   nightlyUsdForParty: z.number().min(5).max(5000),
   neighborhood: z.string().min(2).max(80),
   description: z.string().min(10).max(400),
-  amenities: z.array(z.string().max(40)).max(14).optional(),
-  rating: z.number().min(0).max(5).optional(),
-  walkabilityNote: z.string().max(240).optional(),
+  amenities: optionalish(z.array(z.string().max(40)).max(14)),
+  rating: optionalish(z.number().min(0).max(5)),
+  walkabilityNote: optionalish(z.string().max(240)),
   confidence: rawConfidenceSchema,
 });
 

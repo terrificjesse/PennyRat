@@ -12,9 +12,11 @@ import {
 import {
   DAY_KEYS,
   activityOptionSchema,
+  type ActivityCategory,
   type ActivityOption,
   type BudgetPlan,
   type HoursWindow,
+  type Interest,
   type OpeningHours,
   type ResearchMeta,
   type TripIntake,
@@ -79,6 +81,103 @@ function normalizeHours(raw: RawActivity['openingHours']): OpeningHours | null {
   return anyOpen ? hours : null;
 }
 
+/**
+ * Interest tags as the model writes them, mapped onto the ten the app knows.
+ *
+ * Asked for "hiking" it answers "outdoor" or "nature"; asked for "tourist" it writes
+ * "sightseeing". Rejecting the venue over its label lost every hiking option on an
+ * Iceland trip, which is the opposite of useful. Unknown tags are dropped, and a
+ * venue left with none falls back to what its category implies.
+ */
+const INTEREST_SYNONYMS: Record<string, Interest> = {
+  outdoor: 'hiking',
+  outdoors: 'hiking',
+  nature: 'hiking',
+  hike: 'hiking',
+  hiking: 'hiking',
+  trekking: 'hiking',
+  trail: 'hiking',
+  trails: 'hiking',
+  adventure: 'hiking',
+  walking: 'hiking',
+  food: 'food',
+  dining: 'food',
+  restaurant: 'food',
+  cuisine: 'food',
+  culinary: 'food',
+  gastronomy: 'food',
+  foodie: 'food',
+  coffee: 'food',
+  sport: 'sports',
+  sports: 'sports',
+  stadium: 'sports',
+  athletics: 'sports',
+  family: 'family',
+  kids: 'family',
+  children: 'family',
+  family_friendly: 'family',
+  kid_friendly: 'family',
+  sensory_friendly: 'sensory_friendly',
+  sensory: 'sensory_friendly',
+  accessible: 'sensory_friendly',
+  quiet: 'sensory_friendly',
+  calm: 'sensory_friendly',
+  tourist: 'tourist',
+  sightseeing: 'tourist',
+  landmark: 'tourist',
+  landmarks: 'tourist',
+  scenic: 'tourist',
+  views: 'tourist',
+  iconic: 'tourist',
+  classic: 'tourist',
+  nightlife: 'nightlife',
+  bar: 'nightlife',
+  bars: 'nightlife',
+  club: 'nightlife',
+  drinks: 'nightlife',
+  music: 'nightlife',
+  art: 'art',
+  arts: 'art',
+  gallery: 'art',
+  galleries: 'art',
+  design: 'art',
+  architecture: 'art',
+  history: 'history',
+  historic: 'history',
+  historical: 'history',
+  heritage: 'history',
+  culture: 'history',
+  cultural: 'history',
+  museum: 'history',
+  museums: 'history',
+  archaeology: 'history',
+  shopping: 'shopping',
+  shop: 'shopping',
+  shops: 'shopping',
+  market: 'shopping',
+  markets: 'shopping',
+  souvenirs: 'shopping',
+};
+
+const CATEGORY_INTEREST: Record<ActivityCategory, Interest> = {
+  restaurant: 'food',
+  museum: 'history',
+  attraction: 'tourist',
+  outdoor: 'hiking',
+  experience: 'tourist',
+  shopping: 'shopping',
+  nightlife: 'nightlife',
+};
+
+function normalizeInterests(raw: string[], category: ActivityCategory): Interest[] {
+  const mapped = raw
+    .map((tag) => INTEREST_SYNONYMS[tag.trim().toLowerCase().replace(/[\s-]+/g, '_')])
+    .filter((interest): interest is Interest => Boolean(interest));
+
+  const unique = [...new Set(mapped)];
+  return unique.length > 0 ? unique : [CATEGORY_INTEREST[category]];
+}
+
 export function buildActivityOptions(
   raw: RawActivity[],
   intake: TripIntake,
@@ -127,7 +226,7 @@ export function buildActivityOptions(
       openingHours,
       closedDates: (item.closedDates ?? []).filter((date) => withinTrip.has(date)),
       bookingRequired: item.bookingRequired,
-      interests: [...new Set(item.interests)],
+      interests: normalizeInterests(item.interests, item.category),
       sensoryNotes: item.sensoryNotes ? truncate(item.sensoryNotes, 200) : undefined,
       bestTimeOfDay: item.bestTimeOfDay,
     };
