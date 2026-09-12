@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 export type StepperStep = {
   id: string;
   label: ReactNode;
+  ariaLabel?: string;
   description?: ReactNode;
   disabled?: boolean;
 };
@@ -86,7 +87,10 @@ export function Stepper({
                     "cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/25",
                   )}
                   onClick={() => onStepClick?.(index, step)}
-                  aria-label={`Go to step ${index + 1}`}
+                  aria-label={
+                    step.ariaLabel ??
+                    `Go to step ${index + 1}${typeof step.label === "string" ? `: ${step.label}` : ""}`
+                  }
                 >
                   {complete ? <CheckIcon /> : index + 1}
                 </button>
@@ -99,7 +103,7 @@ export function Stepper({
               <div className="relative z-10 mt-3 max-w-32 px-1">
                 <span
                   className={cx(
-                    "block text-sm font-semibold leading-5",
+                    "block text-[0.6875rem] font-semibold leading-4 sm:text-sm sm:leading-5",
                     current ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

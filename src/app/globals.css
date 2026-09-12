@@ -200,3 +200,38 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media print {
+  @page {
+    margin: 0.55in;
+  }
+
+  :root,
+  :root.dark {
+    color-scheme: light;
+    --background: #ffffff;
+    --foreground: #1f1f1f;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --muted: #f3f1ed;
+    --muted-foreground: #55514b;
+    --border: #d8d3ca;
+    --border-strong: #aaa197;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-itinerary {
+    font-size: 10pt;
+  }
+
+  .itinerary-day > div:first-child {
+    break-after: avoid;
+  }
+}
