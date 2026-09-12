@@ -286,3 +286,88 @@ describe('money formatting', () => {
     expect(parseDollarsToCents('')).toBeNull();
   });
 });
+
+/**
+ * Money at the edges. Integer cents make most of this safe, but the allocator divides
+ * and the gate compares, and both have to hold at values a user can actually type.
+ */
+describe('budgets at the extremes', () => {
+  it('splits a single cent without losing or inventing one', () => {
+    const plan = allocateBuckets({ ...intake, budgetTotal: 1 });
+    expect(BUCKET_KEYS.reduce((acc, key) => acc + plan[key], 0)).toBe(1);
+    expect(BUCKET_KEYS.every((key) => plan[key] >= 0)).toBe(true);
+  });
+
+  it('splits a budget that cannot divide evenly six ways', () => {
+    for (const total of [7, 13, 101, 999_999_997]) {
+      const plan = allocateBuckets({ ...intake, budgetTotal: total });
+      expect(BUCKET_KEYS.reduce((acc, key) => acc + plan[key], 0), `total ${total}`).toBe(total);
+    }
+  });
+
+  it('keeps every bucket a whole number for a large budget', () => {
+    const plan = allocateBuckets({ ...intake, budgetTotal: 50_000_000 });
+    expect(BUCKET_KEYS.every((key) => Number.isSafeInteger(plan[key]))).toBe(true);
+  });
+
+  it('holds the total when a slider is dragged to either end', () => {
+    const plan = allocateBuckets(intake);
+    for (const key of BUCKET_KEYS) {
+      for (const value of [0, intake.budgetTotal]) {
+        const next = setBucket(plan, key, value, intake.budgetTotal);
+        expect(
+          BUCKET_KEYS.reduce((acc, bucket) => acc + next[bucket], 0),
+          `${key} at ${value}`,
+        ).toBe(intake.budgetTotal);
+      }
+    }
+  });
+
+  it('survives a slider drag on a one-cent budget', () => {
+    const total = 1;
+    const plan = allocateBuckets({ ...intake, budgetTotal: total });
+    const next = setBucket(plan, 'flights', 1, total);
+    expect(BUCKET_KEYS.reduce((acc, key) => acc + next[key], 0)).toBe(total);
+  });
+
+  it('blocks submission when a single cent over', () => {
+    const spent = catalog.reduce((acc, option) => acc + option.costCents, 0);
+    const check = canSubmit(
+      { ...intake, budgetTotal: spent - 1 },
+      catalog,
+      catalog.map((option) => option.id),
+    );
+    expect(check.ok).toBe(false);
+    expect(check.reasons[0]).toContain('$0.01');
+  });
+
+  it('allows submission at exactly the budget', () => {
+    const required = ['flt_out', 'flt_back', 'lodg_a', 'act_a'];
+    const spent = catalog
+      .filter((option) => required.includes(option.id))
+      .reduce((acc, option) => acc + option.costCents, 0);
+
+    expect(canSubmit({ ...intake, budgetTotal: spent }, catalog, required).ok).toBe(true);
+  });
+
+  it('never suggests a filler that would push the trip over', () => {
+    for (const remaining of [0, 1, 4_399, 4_400, 100_000]) {
+      for (const filler of suggestFillers(catalog, [], remaining)) {
+        expect(filler.costCents, `remaining ${remaining}`).toBeLessThanOrEqual(remaining);
+      }
+    }
+  });
+
+  it('formats a cent and a large sum without mangling either', () => {
+    expect(formatCents(1)).toBe('$0.01');
+    expect(formatCents(99)).toBe('$0.99');
+    expect(formatCents(50_000_000)).toBe('$500,000');
+  });
+
+  it('refuses dollar input that would silently lose precision', () => {
+    expect(parseDollarsToCents('1.999')).toBeNull();
+    expect(parseDollarsToCents('-5')).toBeNull();
+    expect(parseDollarsToCents('1e5')).toBeNull();
+    expect(parseDollarsToCents('  ')).toBeNull();
+  });
+});

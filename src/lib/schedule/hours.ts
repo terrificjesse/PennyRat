@@ -94,3 +94,28 @@ export function earliestFit(
 
   return candidate + duration <= within.end ? candidate : null;
 }
+
+/**
+ * The latest start inside `within` that fits `duration` without colliding with
+ * anything in `busy`. The mirror of `earliestFit`, for things that want to happen as
+ * late as they are allowed to — checking out of a hotel, mainly.
+ */
+export function latestFit(
+  within: Interval,
+  duration: number,
+  busy: readonly Interval[],
+): number | null {
+  if (within.end - within.start < duration) return null;
+
+  const blocking = busy
+    .filter((interval) => interval.end > within.start && interval.start < within.end)
+    .sort((a, b) => b.start - a.start);
+
+  let candidate = within.end - duration;
+  for (const interval of blocking) {
+    if (candidate >= interval.end) return candidate;
+    candidate = Math.min(candidate, interval.start - duration);
+  }
+
+  return candidate >= within.start ? candidate : null;
+}

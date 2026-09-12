@@ -18,6 +18,7 @@ import {
   clockFromMinutes,
   earliestFit,
   intersect,
+  latestFit,
   isOpenThroughout,
   localDateTime,
   minutesFromClock,
@@ -168,8 +169,12 @@ function buildDays(intake: TripIntake, flights: FlightOption[]): Day[] {
   });
 }
 
-function placeFlights(days: Day[], flights: FlightOption[]): string[] {
+function placeFlights(
+  days: Day[],
+  flights: FlightOption[],
+): { warnings: string[]; unplaceable: { id: string; reason: string }[] } {
   const warnings: string[] = [];
+  const unplaceable: { id: string; reason: string }[] = [];
 
   for (const flight of flights) {
     const departDate = dateOf(flight.legs[0].departLocal);
@@ -184,6 +189,10 @@ function placeFlights(days: Day[], flights: FlightOption[]): string[] {
 
     if (!day) {
       warnings.push(`${flight.title} departs ${departDate}, outside the trip dates`);
+      unplaceable.push({
+        id: flight.id,
+        reason: `departs ${departDate}, which is not a day of this trip`,
+      });
       continue;
     }
 
@@ -194,6 +203,20 @@ function placeFlights(days: Day[], flights: FlightOption[]): string[] {
     const endMin = landsSameDay
       ? Math.max(startMin + 30, minutesOf(arriveAt))
       : Math.min(24 * 60 - 1, startMin + flight.totalDurationMinutes);
+
+    // Two flights over the same hours means two contradictory choices. The first
+    // stays and the rest are handed back with a reason, because a plan that shows a
+    // traveler on two aircraft at once is worse than one that says it cannot.
+    const clash = day.placed.find(
+      (block) => block.kind === 'flight' && block.startMin < endMin && startMin < block.endMin,
+    );
+    if (clash) {
+      unplaceable.push({
+        id: flight.id,
+        reason: `overlaps ${clash.title}, which you also picked — you can only be on one`,
+      });
+      continue;
+    }
 
     place(day, {
       start: localDateTime(day.date, startMin),
@@ -213,7 +236,7 @@ function placeFlights(days: Day[], flights: FlightOption[]): string[] {
     });
   }
 
-  return warnings;
+  return { warnings, unplaceable };
 }
 
 function placeLodging(days: Day[], stay: LodgingOption | undefined): void {
@@ -224,7 +247,9 @@ function placeLodging(days: Day[], stay: LodgingOption | undefined): void {
   const last = ground.at(-1);
 
   if (first) {
-    const startMin = Math.max(first.frame.start, CHECK_IN);
+    const busy = busyFor(first, stay.neighborhood);
+    const window = { start: Math.max(first.frame.start, CHECK_IN), end: 24 * 60 - 1 };
+    const startMin = earliestFit(window, CHECK_DURATION, busy) ?? window.start;
     place(first, {
       start: localDateTime(first.date, startMin),
       end: localDateTime(first.date, startMin + CHECK_DURATION),
@@ -243,7 +268,12 @@ function placeLodging(days: Day[], stay: LodgingOption | undefined): void {
 
   if (last && last !== first) {
     const deadline = last.mustLeaveBy ?? last.frame.end;
-    const startMin = Math.max(0, Math.min(CHECK_OUT, deadline - CHECK_DURATION));
+    const busy = busyFor(last, stay.neighborhood);
+    const window = { start: 0, end: Math.min(CHECK_OUT + CHECK_DURATION, deadline) };
+    const startMin = Math.max(
+      0,
+      latestFit(window, CHECK_DURATION, busy) ?? Math.min(CHECK_OUT, deadline - CHECK_DURATION),
+    );
     place(last, {
       start: localDateTime(last.date, startMin),
       end: localDateTime(last.date, startMin + CHECK_DURATION),
@@ -459,18 +489,28 @@ export function buildItinerary(
   );
 
   const days = buildDays(intake, flights);
-  const warnings = placeFlights(days, flights);
+  // buildDays frames the trip around the first flight of each direction, so those two
+  // get first claim on the day when a contradictory pick collides with them.
+  const authoritative = [
+    flights.find((flight) => flight.direction === 'outbound'),
+    flights.find((flight) => flight.direction === 'return'),
+  ].filter((flight): flight is FlightOption => Boolean(flight));
+  const ordered = [...authoritative, ...flights.filter((f) => !authoritative.includes(f))];
+
+  const flightResult = placeFlights(days, ordered);
+  const warnings = flightResult.warnings;
   placeLodging(days, stays[0]);
 
   const seated = placeMeals(
     days,
     activities.filter((option) => option.category === 'restaurant'),
   );
-  const { unscheduled } = placeActivities(
+  const { unscheduled: unplacedActivities } = placeActivities(
     days,
     activities.filter((option) => !seated.has(option.id)),
     intake,
   );
+  const unscheduled = [...flightResult.unplaceable, ...unplacedActivities];
 
   // Lodging and local transport are daily overheads rather than events, so they are
   // spread across the nights and days they actually cover.
