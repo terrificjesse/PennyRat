@@ -1,7 +1,14 @@
 import { tripDateRange } from '../budget';
 import { fixtureActivities } from '../../fixtures';
 import { fixtureMeta, k2Configured, k2Mode, researchItems } from '../k2/client';
-import { clampInt, dedupeByTitle, normalizeRating, slugId, truncate } from '../k2/parse';
+import {
+  clampInt,
+  dedupeByTitle,
+  mapsSearchUrl,
+  normalizeRating,
+  slugId,
+  truncate,
+} from '../k2/parse';
 import {
   ACTIVITY_TARGET,
   activitySystem,
@@ -229,6 +236,7 @@ export function buildActivityOptions(
       interests: normalizeInterests(item.interests, item.category),
       sensoryNotes: item.sensoryNotes ? truncate(item.sensoryNotes, 200) : undefined,
       bestTimeOfDay: item.bestTimeOfDay,
+      mapsUrl: mapsSearchUrl(item.name, item.neighborhood, intake.destination),
     };
 
     const parsed = activityOptionSchema.safeParse(candidate);

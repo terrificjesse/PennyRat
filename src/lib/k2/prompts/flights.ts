@@ -14,8 +14,10 @@ import { JSON_DISCIPLINE, describeTripDates, optionalish, rawConfidenceSchema } 
  */
 
 export const rawFlightLegSchema = z.object({
-  fromIata: z.string().min(3).max(4),
-  toIata: z.string().min(3).max(4),
+  // Airport codes for flying, station names for rail and coach, place names for a
+  // drive. Held to the same width as the contract's place label.
+  fromIata: z.string().min(2).max(40),
+  toIata: z.string().min(2).max(40),
   departLocal: z.string().min(10).max(25),
   arriveLocal: z.string().min(10).max(25),
   durationMinutes: z.number().int().min(20).max(1200),
@@ -24,6 +26,8 @@ export const rawFlightLegSchema = z.object({
 
 export const rawFlightRouteSchema = z.object({
   direction: z.enum(['outbound', 'return', 'roundtrip']),
+  /** How the journey is made. Absent means flying. */
+  mode: optionalish(z.enum(['plane', 'train', 'bus', 'car'])),
   carrier: z.string().min(2).max(40),
   legs: z.array(rawFlightLegSchema).min(1).max(4),
   /** Only for a roundtrip: the way home. */
@@ -45,9 +49,11 @@ export const FLIGHT_TARGET = 10;
 export const ROUNDTRIP_TARGET = 4;
 
 export const flightSystem = [
-  'You are an airline route analyst. You know which carriers operate which city pairs,',
-  'which hubs they connect through, and what economy fares on those routes tend to run',
-  'by season. You never state a fare as if you had looked it up.',
+  'You are a travel analyst covering every way of getting between two places: flying,',
+  'rail, coach and driving. You know which operators run which city pairs, which hubs',
+  'they connect through, and what each mode tends to cost by season. You never state a',
+  'fare as if you had looked it up. You also know when flying is the wrong answer —',
+  'nobody flies Boston to New York — and you say so by offering the ground options.',
   JSON_DISCIPLINE,
 ].join(' ');
 
@@ -61,6 +67,12 @@ export function buildFlightPrompt(intake: TripIntake): string {
     'Hard requirements:',
     `- Exactly ${FLIGHT_TARGET} entries: ${ROUNDTRIP_TARGET} with direction "roundtrip",`,
     `  then 3 with direction "outbound" and 3 with direction "return".`,
+    '- Set "mode" on every entry: "plane", "train", "bus" or "car".',
+    '- If this pair is one people sensibly travel overland — a few hundred miles or less,',
+    '  or anywhere flying costs more time in airports than it saves in the air — then at',
+    '  least half the entries must be ground travel, and include rail, coach and driving',
+    '  if all three genuinely exist. Nobody flies Boston to New York; do not pretend they do.',
+    '- For a long-haul pair where driving or rail is not realistic, return flights only.',
     '- A "roundtrip" is a single fare covering both directions. Put the outward journey',
     '  in "legs" and the way home in "returnLegs", and price the whole thing in',
     '  "fareBandUsdPerPerson". Round trips are normally cheaper than the two one-ways',
@@ -72,7 +84,14 @@ export function buildFlightPrompt(intake: TripIntake): string {
     '- Order each direction cheapest first.',
     '',
     'Rules for each routing:',
-    '- Use carriers that genuinely operate the route. Do not invent a codeshare.',
+    '- Use operators that genuinely run the route, whatever the mode: the airline, the',
+    '  rail company, the coach line. Do not invent a codeshare or a service.',
+    '- Price each mode the way it is actually sold. A rail fare is a rail fare. A coach',
+    '  ticket is a coach ticket. Driving is fuel plus tolls plus parking at the far end,',
+    '  and no ticket at all — put the operator as "Own car" and price the whole journey.',
+    '- For a train or coach, "legs" are the stations, not airports: write them as people',
+    '  say them ("Boston South Station", "New York Penn Station"). For driving, one leg',
+    '  from the origin to the destination.',
     '- One entry in "legs" per flight. For a connection, the second leg departs from the',
     '  same airport the first leg arrives at.',
     '- "departLocal" and "arriveLocal" are local time at their own airport, formatted',
@@ -91,11 +110,12 @@ export function buildFlightPrompt(intake: TripIntake): string {
     JSON.stringify(
       {
         direction: 'roundtrip | outbound | return',
-        carrier: 'string',
+        mode: 'plane | train | bus | car',
+        carrier: 'string — the airline, rail company, coach line, or "Own car"',
         legs: [
           {
-            fromIata: 'ORD',
-            toIata: 'NRT',
+            fromIata: 'ORD, or a station name for rail and coach',
+            toIata: 'NRT, or a station name',
             departLocal: 'yyyy-mm-ddTHH:mm',
             arriveLocal: 'yyyy-mm-ddTHH:mm',
             durationMinutes: 'number',

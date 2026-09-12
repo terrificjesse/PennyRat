@@ -310,6 +310,23 @@ export function normalizeRating(value: number | undefined): number | undefined {
   return Number.isFinite(onFive) ? Math.round(onFive * 10) / 10 : undefined;
 }
 
+/**
+ * A maps link for a place, built from what it is called and roughly where it is.
+ *
+ * Never from coordinates: `lat`/`lng` come back empty on effectively every researched
+ * venue because the model does not fill them, and one it invents drops a pin in the sea.
+ * A search query always resolves, and resolves to the right thing far more often than a
+ * guessed coordinate does.
+ */
+export function mapsSearchUrl(...parts: (string | undefined)[]): string {
+  const query = parts
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(', ');
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 export function clampInt(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));

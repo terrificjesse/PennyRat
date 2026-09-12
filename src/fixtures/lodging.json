@@ -21,7 +21,8 @@
       "luggage storage",
       "laundry"
     ],
-    "walkabilityNote": "Ginza and Asakusa lines both within 300m."
+    "walkabilityNote": "Ginza and Asakusa lines both within 300m.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Nine%20Hours%20Asakusa%20capsule%2C%20Asakusa%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_unplan_shinjuku",
@@ -45,7 +46,8 @@
       "cafe",
       "common kitchen"
     ],
-    "walkabilityNote": "Six minutes to Kagurazaka station, ten to Iidabashi."
+    "walkabilityNote": "Six minutes to Kagurazaka station, ten to Iidabashi.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=UNPLAN%20Kagurazaka%20private%20twin%2C%20Kagurazaka%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_toyoko_kamata",
@@ -69,7 +71,8 @@
       "free breakfast",
       "coin laundry"
     ],
-    "walkabilityNote": "On the Keikyu line, 13 minutes to Haneda airport."
+    "walkabilityNote": "On the Keikyu line, 13 minutes to Haneda airport.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Toyoko%20Inn%20Kamata%2C%20Kamata%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_koenji_flat",
@@ -93,7 +96,8 @@
       "washer",
       "self check-in"
     ],
-    "walkabilityNote": "Chuo line express reaches Shinjuku in eight minutes."
+    "walkabilityNote": "Chuo line express reaches Shinjuku in eight minutes.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Koenji%20one-bedroom%20apartment%2C%20Koenji%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_fresa_ginza",
@@ -117,7 +121,8 @@
       "front desk 24h",
       "luggage hold"
     ],
-    "walkabilityNote": "Twelve minutes on foot to Tsukiji Outer Market."
+    "walkabilityNote": "Twelve minutes on foot to Tsukiji Outer Market.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Sotetsu%20Fresa%20Inn%20Ginza%2C%20Ginza%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_gracery_shinjuku",
@@ -141,7 +146,8 @@
       "restaurant",
       "terrace"
     ],
-    "walkabilityNote": "Inside Kabukicho, five minutes to Shinjuku station east exit."
+    "walkabilityNote": "Inside Kabukicho, five minutes to Shinjuku station east exit.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Hotel%20Gracery%20Shinjuku%2C%20Shinjuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_nakameguro_loft",
@@ -166,7 +172,8 @@
       "bikes",
       "balcony"
     ],
-    "walkabilityNote": "Hibiya line direct to Ginza in 15 minutes."
+    "walkabilityNote": "Hibiya line direct to Ginza in 15 minutes.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Nakameguro%20canal%20loft%2C%20Nakameguro%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_daikanyama_house",
@@ -191,7 +198,8 @@
       "courtyard",
       "soaking tub"
     ],
-    "walkabilityNote": "Eight minutes to Daikanyama, twenty on foot to Shibuya."
+    "walkabilityNote": "Eight minutes to Daikanyama, twenty on foot to Shibuya.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Daikanyama%20designer%20house%2C%20Daikanyama%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_keio_plaza",
@@ -217,7 +225,8 @@
       "restaurants",
       "concierge"
     ],
-    "walkabilityNote": "Connected to Shinjuku station by underground passage."
+    "walkabilityNote": "Connected to Shinjuku station by underground passage.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Keio%20Plaza%20Hotel%20Tokyo%2C%20Nishi-Shinjuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_trunk_yoyogi",
@@ -242,7 +251,8 @@
       "bar",
       "bikes"
     ],
-    "walkabilityNote": "Directly across from Yoyogi Park’s west gate."
+    "walkabilityNote": "Directly across from Yoyogi Park’s west gate.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Trunk%20Hotel%20Yoyogi%20Park%2C%20Yoyogi%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_park_hyatt",
@@ -269,7 +279,8 @@
       "bar",
       "concierge"
     ],
-    "walkabilityNote": "Twelve-minute walk or a free shuttle to Shinjuku station."
+    "walkabilityNote": "Twelve-minute walk or a free shuttle to Shinjuku station.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Park%20Hyatt%20Tokyo%2C%20Nishi-Shinjuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "lodg_hoshinoya",
@@ -294,6 +305,7 @@
       "kaiseki dining",
       "concierge"
     ],
-    "walkabilityNote": "Otemachi station is directly beneath the building."
+    "walkabilityNote": "Otemachi station is directly beneath the building.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Hoshinoya%20Tokyo%2C%20Otemachi%2C%20Tokyo%2C%20Japan"
   }
 ]

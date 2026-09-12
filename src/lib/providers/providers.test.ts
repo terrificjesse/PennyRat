@@ -151,12 +151,65 @@ describe('buildFlightOptions', () => {
     expect(warnings.some((w) => w.includes('did not reach'))).toBe(true);
   });
 
-  it('drops a routing with an unreadable airport code', () => {
-    const bad = route({
-      legs: [{ ...route().legs[0], toIata: 'TOKYO' }],
+  /**
+   * Places are labels now, not airport codes, because stations are not airports. Only
+   * something genuinely unusable gets dropped.
+   */
+  it('accepts a station name where an airport code used to be required', () => {
+    const byRail = route({
+      mode: 'train',
+      carrier: 'Amtrak',
+      legs: [
+        {
+          fromIata: 'Boston South Station',
+          toIata: 'New York Penn Station',
+          departLocal: '2026-10-12T09:00',
+          arriveLocal: '2026-10-12T12:45',
+          durationMinutes: 225,
+        },
+      ],
     });
-    const { options } = buildFlightOptions([bad], intake, today);
-    expect(options).toHaveLength(0);
+
+    const { options } = buildFlightOptions([byRail], intake, today);
+    expect(options).toHaveLength(1);
+    expect(options[0].legs[0].from).toBe('Boston South Station');
+    expect(options[0].mode).toBe('train');
+  });
+
+  it('still upper-cases a three-letter airport code', () => {
+    const { options } = buildFlightOptions(
+      [route({ legs: [{ ...route().legs[0], fromIata: 'ord' }] })],
+      intake,
+      today,
+    );
+    expect(options[0].legs[0].from).toBe('ORD');
+  });
+
+  it('drops a routing whose place is unusable', () => {
+    const bad = route({ legs: [{ ...route().legs[0], toIata: 'x' }] });
+    expect(buildFlightOptions([bad], intake, today).options).toHaveLength(0);
+  });
+
+  it('prices a drive without inventing a connection warning', () => {
+    const drive = route({
+      mode: 'car',
+      carrier: 'Own car',
+      legs: [
+        {
+          fromIata: 'Boston',
+          toIata: 'New York',
+          departLocal: '2026-10-12T09:00',
+          arriveLocal: '2026-10-12T13:00',
+          durationMinutes: 240,
+        },
+      ],
+      fareBandUsdPerPerson: { low: 40, typical: 55, high: 80 },
+    });
+
+    const { options } = buildFlightOptions([drive], intake, today);
+    expect(options[0].mode).toBe('car');
+    expect(options[0].title).toBe('Own car');
+    expect(options[0].costCents).toBeGreaterThan(0);
   });
 
   it('counts layovers into the total and flags a tight connection', () => {

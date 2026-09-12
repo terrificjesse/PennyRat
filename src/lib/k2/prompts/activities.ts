@@ -35,11 +35,13 @@ export const rawActivitySchema = z.object({
 
 export type RawActivity = z.infer<typeof rawActivitySchema>;
 
-export const ACTIVITY_TARGET = 22;
+export const ACTIVITY_TARGET = 26;
 
 export const activitySystem = [
   'You are a travel researcher who knows specific, real, currently-open venues in the',
   'city you are asked about, and who is candid about the limits of what you know.',
+  'You cover the famous things first and the interesting things second, because a',
+  'visitor who misses the landmark will not forgive you for the hidden gem.',
   JSON_DISCIPLINE,
 ].join(' ');
 
@@ -65,6 +67,13 @@ export function buildActivityPrompt(intake: TripIntake, budget: BudgetPlan): str
     '- Spread the restaurants across neighbourhoods rather than clustering them, so a',
     '  day spent in one part of the city can eat near where it already is.',
     '- At least 2 with category "museum".',
+    '- At least 5 of the landmarks a first-time visitor would be disappointed to miss —',
+    '  the ones that appear on every postcard and that somebody would be asked "you went',
+    '  and did not see it?" about. Washington DC means the Lincoln Memorial and the',
+    '  National Mall; Paris means the Eiffel Tower; Rome means the Colosseum. List these',
+    '  before anything clever or off the beaten track. A guide that skips the obvious is',
+    '  not being sophisticated, it is being unhelpful.',
+    '- Then, and only then, the less obvious places worth a visitor\'s time.',
     '- At least 4 that cost under $15 per person, at least 6 between $15 and $50,',
     '  and at least 3 over $50. Free entries count toward the first group.',
     '- No two entries in the same building or chain.',

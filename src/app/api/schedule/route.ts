@@ -13,8 +13,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(error, { status: 400 });
   }
 
-  const { intake, options, selectedIds, excludedIds } = parsed.data;
-  const itinerary = buildItinerary(intake, options, selectedIds, excludedIds);
+  const { intake, options, selectedIds, excludedIds, pinned } = parsed.data;
+  const itinerary = buildItinerary(intake, options, selectedIds, excludedIds, pinned);
 
   return Response.json(scheduleResponseSchema.parse({ itinerary }));
 }

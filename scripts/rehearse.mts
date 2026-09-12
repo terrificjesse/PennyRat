@@ -320,8 +320,12 @@ async function rehearse(trip: { label: string; intake: Intake }): Promise<Verdic
   if (hungry.length > 0) {
     problems.push(`${hungry.length} day(s) with nothing to eat planned`);
   }
+  // Food is forecast and reserved before the filler spends anything, so a plan that
+  // still lands over budget means that reserve stopped working.
   if ((itinerary.overBudgetCents ?? 0) > 0) {
-    notes.push(`filling the days out went ${money(itinerary.overBudgetCents ?? 0)} over budget`);
+    problems.push(
+      `filling the days out went ${money(itinerary.overBudgetCents ?? 0)} over budget`,
+    );
   }
 
   if (outings < BAR.minOutings) problems.push(`only ${outings} outings scheduled (want ${BAR.minOutings}+)`);

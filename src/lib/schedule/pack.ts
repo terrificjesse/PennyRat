@@ -1,4 +1,4 @@
-import { allocateBuckets, formatCents, tripDateRange } from '../budget';
+import { allocateBuckets, forecastFood, formatCents, tripDateRange } from '../budget';
 import {
   PACE_ACTIVITY_CAP,
   type ActivityOption,
@@ -11,6 +11,7 @@ import {
   type TransitOption,
   type TripIntake,
   type TripOption,
+  travelMode,
 } from '../types';
 import {
   DAY_END,
@@ -207,7 +208,9 @@ function placeFlights(
   for (const flight of flights) {
     const flying = flight.legs.reduce((acc, leg) => acc + leg.durationMinutes, 0);
     const ground = flight.totalDurationMinutes - flying;
-    if (flight.stops > 0 && ground / flight.stops < TIGHT_CONNECTION) {
+    // Changing trains is a connection; a drive with a stop in it is not.
+    const driving = travelMode(flight) === 'car';
+    if (!driving && flight.stops > 0 && ground / flight.stops < TIGHT_CONNECTION) {
       warnings.push(`${flight.title} connects in under an hour — little room if the first leg slips`);
     }
 
@@ -644,11 +647,90 @@ function closedReason(activity: ActivityOption, dates: readonly string[]): strin
     : `only open ${openDays.join(', ')} — none of which fall in your trip`;
 }
 
+export type Pin = { id: string; date: string; startMinutes: number };
+
+/**
+ * Blocks the traveler dragged to a particular time.
+ *
+ * These go down before anything else and the rest of the day packs around them. A pin
+ * that cannot hold — the venue shuts at four and it was dropped at six — is refused
+ * rather than quietly moved, so the UI can snap it back and say why. Being moved
+ * without being told is worse than being refused.
+ */
+function placePins(
+  days: Day[],
+  pins: readonly Pin[],
+  activities: readonly ActivityOption[],
+): { pinned: Set<string>; refused: { id: string; reason: string }[] } {
+  const pinned = new Set<string>();
+  const refused: { id: string; reason: string }[] = [];
+
+  for (const pin of pins) {
+    const option = activities.find((candidate) => candidate.id === pin.id);
+    if (!option) {
+      refused.push({ id: pin.id, reason: 'that is not something on this trip' });
+      continue;
+    }
+
+    const day = days.find((candidate) => candidate.date === pin.date);
+    if (!day || !day.onTheGround) {
+      refused.push({ id: pin.id, reason: `you are not at the destination on ${pin.date}` });
+      continue;
+    }
+
+    const slot = { start: pin.startMinutes, end: pin.startMinutes + option.durationMinutes };
+
+    if (slot.start < day.frame.start || slot.end > day.frame.end) {
+      refused.push({
+        id: pin.id,
+        reason: `that is outside the time you have on ${pin.date} — your travel takes up the rest`,
+      });
+      continue;
+    }
+
+    if (!isOpenThroughout(option, day.date, slot)) {
+      refused.push({
+        id: pin.id,
+        reason: `${option.title} is not open then on ${pin.date}`,
+      });
+      continue;
+    }
+
+    const clash = day.placed.find(
+      (block) => block.startMin < slot.end && slot.start < block.endMin,
+    );
+    if (clash) {
+      refused.push({ id: pin.id, reason: `that would run over ${clash.title}` });
+      continue;
+    }
+
+    const isMeal = option.category === 'restaurant';
+    place(day, {
+      start: localDateTime(day.date, slot.start),
+      end: localDateTime(day.date, slot.end),
+      kind: isMeal ? 'meal' : 'activity',
+      refId: option.id,
+      title: option.title,
+      note: option.bookingRequired ? 'Booking required' : option.neighborhood,
+      costCents: option.costCents,
+      startMin: slot.start,
+      endMin: slot.end,
+      neighborhood: option.neighborhood,
+      isMeal,
+      isActivity: !isMeal,
+    });
+    pinned.add(option.id);
+  }
+
+  return { pinned, refused };
+}
+
 export function buildItinerary(
   intake: TripIntake,
   options: readonly TripOption[],
   selectedIds: readonly string[],
   excludedIds: readonly string[] = [],
+  pins: readonly Pin[] = [],
 ): Itinerary {
   const selected = new Set(selectedIds);
   const excluded = new Set(excludedIds);
@@ -674,21 +756,38 @@ export function buildItinerary(
   const warnings = flightResult.warnings;
   placeLodging(days, stays[0]);
 
+  // Whatever the traveler put somewhere deliberately claims its slot first.
+  const allActivities = options.filter(
+    (option): option is ActivityOption => option.kind === 'activity',
+  );
+  const pinResult = placePins(days, pins, allActivities);
+  // A refused pin is not quietly re-homed somewhere else. The traveler asked for a
+  // specific time; the honest answer is no with a reason, not a silent relocation.
+  const refusedPins = new Set(pinResult.refused.map((miss) => miss.id));
+
   // Everything research returned is fair game for filling the days out, minus whatever
   // the traveler has explicitly thrown away.
   const availableActivities = options.filter(
-    (option): option is ActivityOption => option.kind === 'activity' && !excluded.has(option.id),
+    (option): option is ActivityOption =>
+      option.kind === 'activity' && !excluded.has(option.id) && !refusedPins.has(option.id),
   );
 
   const seated = placeMeals(
     days,
-    availableActivities.filter((option) => option.category === 'restaurant'),
+    availableActivities.filter(
+      (option) => option.category === 'restaurant' && !pinResult.pinned.has(option.id),
+    ),
     selected,
     stays[0]?.neighborhood,
   );
   const { unscheduled: unplacedActivities } = placeActivities(
     days,
-    activities.filter((option) => !seated.has(option.id)),
+    activities.filter(
+      (option) =>
+        !seated.has(option.id) &&
+        !pinResult.pinned.has(option.id) &&
+        !refusedPins.has(option.id),
+    ),
     intake,
   );
 
@@ -701,12 +800,23 @@ export function buildItinerary(
   // Restaurants are fill material too once the three meal slots are set — a coffee
   // house or a market is a perfectly good way to spend a short afternoon, and leaving a
   // day thin while one sits available is not a plan anybody wants.
+  // Three meals a day are going on the plan whatever else happens, so that money is
+  // committed before anything discretionary gets to spend it. Without this reserve the
+  // filler buys attractions up to the ceiling and dinner arrives on top, which is how
+  // every trip ended up over.
+  const food = forecastFood(intake, options);
+  const mealsAlreadyPlaced = days
+    .flatMap((day) => day.placed)
+    .filter((block) => block.isMeal)
+    .reduce((acc, block) => acc + block.costCents, 0);
+  const foodStillToCome = Math.max(0, food.totalCents - mealsAlreadyPlaced);
+
   fillDays(
     days,
     availableActivities,
     intake,
     placedIds,
-    Math.max(0, intake.budgetTotal - chosenCents),
+    Math.max(0, intake.budgetTotal - chosenCents - foodStillToCome),
   );
 
   // Derived from what was actually placed rather than from unique options: a breakfast
@@ -722,9 +832,11 @@ export function buildItinerary(
   const onPlan = new Set(
     days.flatMap((day) => day.placed.map((block) => block.refId).filter(Boolean) as string[]),
   );
-  const unscheduled = [...flightResult.unplaceable, ...unplacedActivities].filter(
-    (miss) => !onPlan.has(miss.id),
-  );
+  const unscheduled = [
+    ...flightResult.unplaceable,
+    ...pinResult.refused,
+    ...unplacedActivities,
+  ].filter((miss) => !onPlan.has(miss.id));
 
   // Lodging and local transport are daily overheads rather than events, so they are
   // spread across the nights and days they actually cover.

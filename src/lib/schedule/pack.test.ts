@@ -672,3 +672,85 @@ describe('a round trip is one price', () => {
     expect(summed).toBe(itinerary.totalCents - unplaced);
   });
 });
+
+/**
+ * Dragging a block somewhere is a deliberate instruction. It gets its slot before
+ * anything else, and if it genuinely cannot hold it is refused rather than quietly
+ * moved — being silently relocated is worse than being told no.
+ */
+describe('blocks the traveler pinned', () => {
+  const MUSEUM = 'act_tokyo_natl_museum'; // closed Mondays, 09:30-17:00 otherwise
+
+  it('puts a pinned block exactly where it was dropped', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: MUSEUM, date: '2026-10-15', startMinutes: minutesFromClock('10:00') },
+    ]);
+
+    const block = blockFor(itinerary, MUSEUM)!;
+    expect(block.date).toBe('2026-10-15');
+    expect(block.start.slice(11)).toBe('10:00');
+  });
+
+  it('packs the rest of the day around it without overlapping', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: MUSEUM, date: '2026-10-15', startMinutes: minutesFromClock('10:00') },
+    ]);
+
+    const day = itinerary.days.find((entry) => entry.date === '2026-10-15')!;
+    const ordered = [...day.blocks].sort((a, b) => minutes(a.start) - minutes(b.start));
+    for (let i = 1; i < ordered.length; i += 1) {
+      expect(minutes(ordered[i].start)).toBeGreaterThanOrEqual(minutes(ordered[i - 1].end));
+    }
+    expect(day.blocks.length).toBeGreaterThan(1);
+  });
+
+  it('refuses a pin where the venue is shut, and says so', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: MUSEUM, date: '2026-10-15', startMinutes: minutesFromClock('06:00') },
+    ]);
+
+    const refused = itinerary.unscheduled.find((miss) => miss.id === MUSEUM);
+    expect(refused).toBeDefined();
+    expect(refused!.reason).toMatch(/not open|outside the time/i);
+  });
+
+  it('refuses a pin on a day the traveler is in the air', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: 'act_sensoji', date: '2026-10-12', startMinutes: minutesFromClock('10:00') },
+    ]);
+
+    const refused = itinerary.unscheduled.find((miss) => miss.id === 'act_sensoji')!;
+    expect(refused.reason).toMatch(/not at the destination|outside the time/i);
+  });
+
+  it('refuses a pin that would run over a flight', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: 'act_sensoji', date: '2026-10-17', startMinutes: minutesFromClock('15:30') },
+    ]);
+
+    const refused = itinerary.unscheduled.find((miss) => miss.id === 'act_sensoji')!;
+    expect(refused.reason.length).toBeGreaterThan(10);
+  });
+
+  it('refuses an id that is not part of this trip', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: 'act_not_real', date: '2026-10-15', startMinutes: 600 },
+    ]);
+
+    expect(itinerary.unscheduled.map((miss) => miss.id)).toContain('act_not_real');
+  });
+
+  it('keeps the plan sound with several pins at once', () => {
+    const itinerary = buildItinerary(intake, fixtureOptions, base, [], [
+      { id: MUSEUM, date: '2026-10-15', startMinutes: minutesFromClock('10:00') },
+      { id: 'act_sensoji', date: '2026-10-16', startMinutes: minutesFromClock('09:00') },
+      { id: 'act_meiji_jingu', date: '2026-10-16', startMinutes: minutesFromClock('14:00') },
+    ]);
+
+    expect(blockFor(itinerary, 'act_sensoji')!.start.slice(11)).toBe('09:00');
+    expect(blockFor(itinerary, 'act_meiji_jingu')!.start.slice(11)).toBe('14:00');
+    expect(itinerary.totalCents).toBe(
+      (itinerary.chosenCents ?? 0) + (itinerary.suggestedCents ?? 0),
+    );
+  });
+});

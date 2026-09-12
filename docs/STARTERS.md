@@ -18,6 +18,11 @@ This round is mostly about the shape of the product. The wizard asks for things 
 wrong order, front-loads a budget screen nobody wants, misses obvious landmarks, plans
 food without budgeting for it, and offers no way back to yesterday's trip.
 
+**The contract for this round has already landed and is green** — travel modes,
+`mapsUrl`, `pinned` and `forecastFood` are all in `src/lib/types.ts` and
+`src/lib/budget.ts`, and every one of them is additive, so nothing either lane has built
+is broken. Both prompts below can start immediately.
+
 **Needed from the human:** save the send-off image to `public/enjoy-your-trip.jpg`.
 
 ---
@@ -60,8 +65,19 @@ alternatives and couldAdd for editing. Almost none of that is visible yet.
 8. Round trips are in the data and invisible in the UI. One card covering both
    directions, with the saving against two one-ways shown.
 
-The API lane is adding ground travel (train, bus, driving) to the same step, so build
-"Getting there" around a `mode` field rather than assuming a plane.
+The contract is already in and green, so all of this is real today:
+
+- `option.mode` is 'plane' | 'train' | 'bus' | 'car'. Absent means plane — read it with
+  travelMode(option) from @/lib/types and label it with TRAVEL_MODE_LABELS. Build
+  "Getting there" around the mode rather than assuming a plane.
+- A leg's from/to are place labels now, 2 to 40 characters, not airport codes. Anything
+  rendering them as an IATA badge has to cope with "Boston South Station".
+- BUCKET_LABELS.flights already reads "Getting there", so a step titled from the bucket
+  label updates itself.
+- forecastFood(intake, options) from @/lib/budget gives you the food number for the
+  Explore step: "about $420 on food across five days".
+- mapsUrl and pinned exist in the contract; I am populating and honouring them now, so
+  they may be absent for a little longer. Build against them.
 
 Your lane: src/components/**, src/app/** except api/, src/lib/store/**, globals.css.
 Never run git. End with the HANDOFF block from AGENTS.md §12.
@@ -75,18 +91,16 @@ Never run git. End with the HANDOFF block from AGENTS.md §12.
 You are the API/logic lane on PennyRat. Read AGENTS.md and
 docs/requests/codex-to-claude.md first.
 
-The contract changes for this round land first, alone, and get committed before Codex
-builds on them: travel modes, mapsUrl, pinned blocks, and forecastFood. File the summary
-in docs/requests/claude-to-codex.md the moment they are green.
+The contract is done and green: mode, mapsUrl, pinned and forecastFood are all in, all
+additive, and filed to Codex. 390 tests pass. This is the work behind those fields.
 
-1. Getting there, not just flights. FlightOption gains
-   mode: 'plane' | 'train' | 'bus' | 'car', and leg from/to loosen from strict IATA to a
-   place label, because stations are not airports. Keep the discriminant as
-   kind: 'flight' — renaming touches thirty sites for no behavioural gain — but export
-   TravelOption as the name people should use and relabel the bucket "Getting there".
-   Prompt B asks for trains, coaches and driving on short-haul pairs, priced the way each
-   is really sold: a rail fare, a coach ticket, fuel plus tolls plus parking. The
-   round-trip branch already handles both directions.
+1. Getting there, not just flights. The contract carries mode already; nothing
+   researches it yet. Prompt B should ask for trains, coaches and driving when the pair
+   is short enough to make flying silly, each priced the way it is really sold: a rail
+   fare, a coach ticket, fuel plus tolls plus parking for a car. providers/flights.ts
+   sets mode and reuses estimateFare and the existing round-trip branch — a train round
+   trip is the same shape as a flight round trip. Leg from/to are place labels now, so
+   stations pass validation where they used to be dropped.
 
 2. The landmarks problem. A Washington DC trip came back with no monuments. Prompt A
    needs an explicit floor on the places a first-time visitor would be disappointed to

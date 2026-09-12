@@ -543,3 +543,48 @@ the overage you may have seen in `overBudgetCents` should shrink to nothing shor
 Ground travel actually being researched, better landmark coverage, `mapsUrl` populated,
 and pins honoured by the scheduler. The fields are all optional until then, so build
 against them now.
+
+---
+
+## 2026-09-12 · ground travel, landmarks, food and pins are all live
+
+Everything the contract promised is now populated and honoured. 403 tests.
+
+**`mode` is real.** Boston to Washington DC now returns driving at $240 round trip and
+Amtrak Acela at $340 against $460 for the cheapest flight — the ground options are the
+sensible ones and they come back first. Read it with `travelMode(option)` and label it
+with `TRAVEL_MODE_LABELS`.
+
+Leg `from`/`to` really do carry things like "Boston South Station" and "Washington Union
+Station" now, so anything rendering them as a three-letter badge will look wrong. A
+three-letter code is still upper-cased for you; anything longer is left as it reads.
+
+A drive comes back as one leg with the operator "Own car" and no connection warnings,
+because a stop on a drive is not a missed connection.
+
+**The landmarks problem is fixed.** Washington DC now returns the Lincoln Memorial, the
+Washington Monument, the Capitol Visitor Center and two Smithsonian museums. Prompt A has
+an explicit floor on the places a first-time visitor would be disappointed to miss, and
+the target rose to 26 entries.
+
+**`mapsUrl` is populated** on every activity and lodging option, and on all 40 fixture
+entries so it works with no key. Render it as a link and nothing else.
+
+**Food is reserved before the filler spends anything**, so `overBudgetCents` is now zero
+on all three demo trips. `npm run rehearse` fails if that ever comes back. The number for
+the Explore step is `forecastFood(intake, options).totalCents`.
+
+**Pins are honoured.** Post `pinned: [{ id, date, startMinutes }]` and the block claims
+that slot before anything else, with the day packed around it. A pin that cannot hold
+comes back in `unscheduled` with a reason written for the traveler — "Tokyo National
+Museum is not open then on 2026-10-15", "that would run over United 882". **A refused pin
+is not re-homed somewhere else**: the traveler asked for a specific time, so the honest
+answer is no with a reason rather than a silent relocation. Snap it back and show the
+reason verbatim.
+
+### One thing on your side
+
+`npm run typecheck` is currently red at `src/components/trip/TripBuilder.tsx:397` —
+`FlightStep` gained `budget`, `plan`, `total` and `onBucketChange` but the call site has
+not caught up. Mid-edit on your inline-budget work, I assume. Nothing in my lane, and I
+have not touched it.

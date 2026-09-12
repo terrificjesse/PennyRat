@@ -286,3 +286,29 @@ describe('the sample budget stands up to live prices', () => {
     expect(blowout).toBeGreaterThan(fixtureIntake.budgetTotal);
   });
 });
+
+/**
+ * Map links are built from a search query rather than coordinates. `lat`/`lng` come back
+ * empty on every researched venue because the model does not fill them, and one it
+ * invents puts a pin in the sea.
+ */
+describe('every place can be found on a map', () => {
+  it('gives each activity and stay a maps link', () => {
+    for (const option of [...fixtureActivities, ...fixtureLodging]) {
+      expect(option.mapsUrl, `${option.title} has no map link`).toBeTruthy();
+      expect(option.mapsUrl).toMatch(/^https:\/\/www\.google\.com\/maps\/search/);
+    }
+  });
+
+  it('puts the name and the city into the query', () => {
+    const sensoji = fixtureActivities.find((option) => option.id === 'act_sensoji')!;
+    const query = decodeURIComponent(new URL(sensoji.mapsUrl!).searchParams.get('query') ?? '');
+
+    expect(query).toContain('Asakusa');
+    expect(query).toContain('Tokyo');
+  });
+
+  it('does not rely on coordinates, which research never fills in', () => {
+    expect(fixtureActivities.every((option) => option.lat === undefined)).toBe(true);
+  });
+});

@@ -14,6 +14,7 @@ import {
   type FlightLeg,
   type FlightOption,
   type ResearchMeta,
+  type TravelMode,
   type TripIntake,
 } from '../types';
 
@@ -78,13 +79,22 @@ export function estimateFare(
   return Math.round(perPerson * 100) * travelers;
 }
 
-function iata(value: string): string | null {
-  const code = value.trim().toUpperCase();
-  return /^[A-Z]{3}$/.test(code) ? code : null;
+/**
+ * A place a journey starts or ends. An airport code is upper-cased; anything longer is
+ * a station or a town and is left as it reads.
+ */
+function placeLabel(value: string): string | null {
+  const trimmed = value.trim().replace(/\s+/g, ' ');
+  if (trimmed.length < 2 || trimmed.length > 40) return null;
+  return /^[a-z]{3}$/i.test(trimmed) ? trimmed.toUpperCase() : trimmed;
 }
 
-function routeTitle(carrier: string, legs: FlightLeg[]): string {
-  if (legs.length === 1) return truncate(`${carrier} · nonstop`, 120);
+function routeTitle(carrier: string, legs: FlightLeg[], mode: TravelMode): string {
+  if (legs.length === 1) {
+    // "Nonstop" belongs to aviation; a car is just a drive.
+    const suffix = { plane: ' · nonstop', train: ' · direct', bus: ' · direct', car: '' }[mode];
+    return truncate(`${carrier}${suffix}`, 120);
+  }
   const hubs = legs.slice(0, -1).map((leg) => leg.to);
   return truncate(`${carrier} via ${hubs.join(', ')}`, 120);
 }
@@ -106,8 +116,8 @@ function prepareLegs(
   const parsed = rawLegs.map((leg) => ({
     depart: toLocalDateTime(leg.departLocal),
     arrive: toLocalDateTime(leg.arriveLocal),
-    from: iata(leg.fromIata),
-    to: iata(leg.toIata),
+    from: placeLabel(leg.fromIata),
+    to: placeLabel(leg.toIata),
     durationMinutes: leg.durationMinutes,
     flightNo: leg.flightNo,
   }));
@@ -211,13 +221,14 @@ export function buildFlightOptions(
       bucket: 'flights' as const,
       title:
         route.direction === 'roundtrip'
-          ? `${routeTitle(route.carrier, legs)} · round trip`
-          : routeTitle(route.carrier, legs),
+          ? `${routeTitle(route.carrier, legs, route.mode ?? 'plane')} · round trip`
+          : routeTitle(route.carrier, legs, route.mode ?? 'plane'),
       costCents: estimateFare(route.fareBandUsdPerPerson, daysAhead, intake.travelers),
       costBasis: 'per_person' as const,
       estimated: true,
       confidence,
       direction: route.direction,
+      mode: route.mode ?? 'plane',
       legs,
       returnLegs,
       stops: connections,
@@ -288,6 +299,7 @@ export async function researchFlights(
       system: flightSystem,
       prompt: buildFlightPrompt(intake),
       itemSchema: rawFlightRouteSchema,
+      maxTokens: 24_576,
     });
 
     const { options, warnings } = buildFlightOptions(items, intake);

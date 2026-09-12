@@ -65,7 +65,8 @@
     "bestTimeOfDay": "any",
     "rating": 4.5,
     "reviewCount": 41230,
-    "sensoryNotes": "Dark rooms, mirrors and loud ambient sound throughout. Overwhelming for noise-sensitive visitors."
+    "sensoryNotes": "Dark rooms, mirrors and loud ambient sound throughout. Overwhelming for noise-sensitive visitors.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=teamLab%20Planets%20TOKYO%2C%20Toyosu%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_tokyo_natl_museum",
@@ -130,7 +131,8 @@
     "bestTimeOfDay": "morning",
     "rating": 4.6,
     "reviewCount": 18940,
-    "sensoryNotes": "Large, hushed galleries with benches and few crowds on weekday mornings."
+    "sensoryNotes": "Large, hushed galleries with benches and few crowds on weekday mornings.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tokyo%20National%20Museum%2C%20Ueno%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_sensoji",
@@ -197,7 +199,8 @@
     ],
     "bestTimeOfDay": "morning",
     "rating": 4.5,
-    "reviewCount": 92180
+    "reviewCount": 92180,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Sens%C5%8D-ji%20Temple%20and%20Nakamise-d%C5%8Dri%2C%20Asakusa%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_shibuya_sky",
@@ -263,7 +266,8 @@
     ],
     "bestTimeOfDay": "evening",
     "rating": 4.5,
-    "reviewCount": 27600
+    "reviewCount": 27600,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Shibuya%20Sky%20rooftop%20observatory%2C%20Shibuya%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_tsukiji_market",
@@ -321,7 +325,8 @@
     "bestTimeOfDay": "morning",
     "rating": 4.4,
     "reviewCount": 15320,
-    "sensoryNotes": "Tight, crowded lanes with strong smells and no seating."
+    "sensoryNotes": "Tight, crowded lanes with strong smells and no seating.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tsukiji%20Outer%20Market%20food%20crawl%2C%20Tsukiji%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_ichiran",
@@ -389,7 +394,8 @@
     "bestTimeOfDay": "any",
     "rating": 4.2,
     "reviewCount": 31400,
-    "sensoryNotes": "Individual booths, no eye contact required, minimal conversation. Easiest restaurant in the city if you need low stimulation."
+    "sensoryNotes": "Individual booths, no eye contact required, minimal conversation. Easiest restaurant in the city if you need low stimulation.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Ichiran%20Shibuya%20ramen%2C%20Shibuya%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_sushi_omakase",
@@ -450,7 +456,8 @@
     ],
     "bestTimeOfDay": "morning",
     "rating": 4.8,
-    "reviewCount": 2140
+    "reviewCount": 2140,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Sushi%20Kimura%20omakase%20lunch%2C%20Toyosu%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_meiji_jingu",
@@ -519,7 +526,8 @@
     "bestTimeOfDay": "morning",
     "rating": 4.6,
     "reviewCount": 55700,
-    "sensoryNotes": "Wide shaded paths, low noise, easy to leave at any point."
+    "sensoryNotes": "Wide shaded paths, low noise, easy to leave at any point.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Meiji%20Jing%C5%AB%20shrine%20and%20forest%20path%2C%20Harajuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_takao_hike",
@@ -586,7 +594,8 @@
     ],
     "bestTimeOfDay": "morning",
     "rating": 4.5,
-    "reviewCount": 12800
+    "reviewCount": 12800,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Mount%20Takao%20trail%206%20and%20cable%20car%2C%20Takao%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_shinjuku_gyoen",
@@ -650,7 +659,8 @@
     "bestTimeOfDay": "any",
     "rating": 4.6,
     "reviewCount": 34100,
-    "sensoryNotes": "Quiet, flat, plenty of benches and shade. A good reset between busier stops."
+    "sensoryNotes": "Quiet, flat, plenty of benches and shade. A good reset between busier stops.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Shinjuku%20Gyoen%20National%20Garden%2C%20Shinjuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_ghibli_museum",
@@ -712,7 +722,8 @@
     ],
     "bestTimeOfDay": "any",
     "rating": 4.7,
-    "reviewCount": 22900
+    "reviewCount": 22900,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Ghibli%20Museum%2C%20Mitaka%2C%20Mitaka%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_ueno_zoo",
@@ -773,7 +784,8 @@
     ],
     "bestTimeOfDay": "any",
     "rating": 4.1,
-    "reviewCount": 19800
+    "reviewCount": 19800,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Ueno%20Zoo%2C%20Ueno%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_akihabara",
@@ -841,7 +853,8 @@
     "bestTimeOfDay": "afternoon",
     "rating": 4.3,
     "reviewCount": 41000,
-    "sensoryNotes": "Extremely loud arcades and dense crowds after 17:00."
+    "sensoryNotes": "Extremely loud arcades and dense crowds after 17:00.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Akihabara%20electronics%20and%20arcade%20crawl%2C%20Akihabara%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_kusama_museum",
@@ -894,7 +907,8 @@
     "bestTimeOfDay": "any",
     "rating": 4.4,
     "reviewCount": 3900,
-    "sensoryNotes": "Capped at a small number of visitors per slot, so it stays genuinely quiet."
+    "sensoryNotes": "Capped at a small number of visitors per slot, so it stays genuinely quiet.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Yayoi%20Kusama%20Museum%2C%20Shinjuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_skytree",
@@ -961,7 +975,8 @@
     ],
     "bestTimeOfDay": "any",
     "rating": 4.3,
-    "reviewCount": 48200
+    "reviewCount": 48200,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tokyo%20Skytree%20Tembo%20Deck%2C%20Oshiage%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_kappabashi",
@@ -1023,7 +1038,8 @@
     ],
     "bestTimeOfDay": "afternoon",
     "rating": 4.4,
-    "reviewCount": 8600
+    "reviewCount": 8600,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Kappabashi%20kitchen%20tool%20street%2C%20Asakusa%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_nakameguro_izakaya",
@@ -1090,7 +1106,8 @@
     ],
     "bestTimeOfDay": "evening",
     "rating": 4.5,
-    "reviewCount": 6700
+    "reviewCount": 6700,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Nakameguro%20canal%20izakaya%20dinner%2C%20Nakameguro%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_sumo_museum",
@@ -1149,7 +1166,8 @@
     "bestTimeOfDay": "any",
     "rating": 4.0,
     "reviewCount": 1850,
-    "sensoryNotes": "Single quiet room, rarely more than a few people in it."
+    "sensoryNotes": "Single quiet room, rarely more than a few people in it.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Sum%C5%8D%20Museum%20at%20Ry%C5%8Dgoku%20Kokugikan%2C%20Ry%C5%8Dgoku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_cafe_bear_pond",
@@ -1211,7 +1229,8 @@
     "bestTimeOfDay": "morning",
     "rating": 4.4,
     "reviewCount": 5200,
-    "sensoryNotes": "Six seats and a strict no-photography rule, so it stays calm."
+    "sensoryNotes": "Six seats and a strict no-photography rule, so it stays calm.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Bear%20Pond%20Espresso%2C%20Shimokitazawa%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_cafe_kissa",
@@ -1278,7 +1297,8 @@
     "bestTimeOfDay": "morning",
     "rating": 4.5,
     "reviewCount": 3900,
-    "sensoryNotes": "Quiet enough that conversation happens in murmurs."
+    "sensoryNotes": "Quiet enough that conversation happens in murmurs.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Chatei%20Hatou%20kissaten%2C%20Shibuya%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_bakery_viron",
@@ -1344,7 +1364,8 @@
     ],
     "bestTimeOfDay": "morning",
     "rating": 4.3,
-    "reviewCount": 6100
+    "reviewCount": 6100,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Viron%20boulangerie%2C%20Shibuya%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_onigiri_bongo",
@@ -1405,7 +1426,8 @@
     ],
     "bestTimeOfDay": "any",
     "rating": 4.6,
-    "reviewCount": 4800
+    "reviewCount": 4800,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Onigiri%20Bongo%2C%20Otsuka%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_soba_matsunaga",
@@ -1466,7 +1488,8 @@
     ],
     "bestTimeOfDay": "afternoon",
     "rating": 4.7,
-    "reviewCount": 2100
+    "reviewCount": 2100,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Sobakiri%20Matsunaga%2C%20Nihonbashi%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_curry_kyuyamutei",
@@ -1528,7 +1551,8 @@
     "bestTimeOfDay": "afternoon",
     "rating": 4.4,
     "reviewCount": 3300,
-    "sensoryNotes": "Low lighting and close tables; lively at peak times."
+    "sensoryNotes": "Low lighting and close tables; lively at peak times.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Kyuyamutei%20curry%2C%20Omotesando%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_tonkatsu_maisen",
@@ -1594,7 +1618,8 @@
     ],
     "bestTimeOfDay": "evening",
     "rating": 4.4,
-    "reviewCount": 11200
+    "reviewCount": 11200,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tonkatsu%20Maisen%20Aoyama%2C%20Aoyama%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_yakitori_torikizoku",
@@ -1662,7 +1687,8 @@
     "bestTimeOfDay": "evening",
     "rating": 4.0,
     "reviewCount": 8700,
-    "sensoryNotes": "Loud, smoky and shoulder to shoulder after 19:00."
+    "sensoryNotes": "Loud, smoky and shoulder to shoulder after 19:00.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Torikizoku%20Shinjuku%2C%20Shinjuku%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_standing_sushi",
@@ -1728,7 +1754,8 @@
     ],
     "bestTimeOfDay": "any",
     "rating": 4.3,
-    "reviewCount": 5400
+    "reviewCount": 5400,
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Uogashi%20Nihon-Ichi%20standing%20sushi%2C%20Shibuya%2C%20Tokyo%2C%20Japan"
   },
   {
     "id": "act_depachika",
@@ -1796,6 +1823,7 @@
     "bestTimeOfDay": "afternoon",
     "rating": 4.5,
     "reviewCount": 9100,
-    "sensoryNotes": "Very crowded between 17:00 and 19:00 when commuters buy dinner."
+    "sensoryNotes": "Very crowded between 17:00 and 19:00 when commuters buy dinner.",
+    "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Isetan%20depachika%20food%20hall%2C%20Shinjuku%2C%20Tokyo%2C%20Japan"
   }
 ]
