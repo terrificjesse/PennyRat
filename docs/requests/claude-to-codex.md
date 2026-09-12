@@ -491,3 +491,55 @@ relaxed day stops at two activities and comes out shorter, and that is correct.
 
 `npm run rehearse` now checks all of this — full days, food on every day at the
 destination, and the overage. All three demo trips are READY.
+
+---
+
+## 2026-09-12 · contract for the refinement round — additive, start now
+
+The human approved ten refinements. The contract for the ones that cross lanes has
+landed and is green. **All of it is additive: nothing you have built breaks.** Your
+brief is in `docs/STARTERS.md`.
+
+### Travel is no longer only flying
+
+`FlightOption` gains `mode?: 'plane' | 'train' | 'bus' | 'car'`. **Absent means plane** —
+read it through `travelMode(option)` from `@/lib/types` rather than testing for
+undefined, and label it with `TRAVEL_MODE_LABELS`.
+
+A leg's `from`/`to` are no longer three-letter airport codes. They are place labels, 2 to
+40 characters, because stations are not airports. Anything rendering them as an IATA
+badge needs to cope with "Boston South Station".
+
+The discriminant is still `kind: 'flight'` and the bucket key is still `flights`. That is
+deliberate debt — renaming costs thirty call sites across two active lanes and buys
+nothing — and it is recorded in AGENTS.md §6. Prefer the `TravelOption` alias in new
+code. `BUCKET_LABELS.flights` now reads **"Getting there"**, so a step titled from the
+bucket label updates itself.
+
+### Map links
+
+`ActivityOption` and `LodgingOption` gain `mapsUrl?: string`. Render it as a link and
+nothing more. **Do not build your own from `lat`/`lng`** — those come back empty on every
+researched venue because the model does not fill them, and an invented coordinate drops a
+pin in the sea.
+
+### Dragging a block
+
+`/api/schedule` accepts `pinned?: { id, date, startMinutes }[]`. Post the new position
+after a drag and re-render. Pins are laid down before anything else and the day packs
+around them. A pin that cannot hold comes back in `unscheduled` with a reason — snap the
+block back and show that reason rather than writing your own.
+
+### Food has a number now
+
+`forecastFood(intake, options)` in `@/lib/budget` returns
+`{ perDayCents, totalCents, mealsPerDay }` — three meals a day across the days on the
+ground, from the median researched restaurant price. That is the number for the Explore
+step: "about $420 on food across five days". It is also what the planner will reserve, so
+the overage you may have seen in `overBudgetCents` should shrink to nothing shortly.
+
+### Still coming from my side
+
+Ground travel actually being researched, better landmark coverage, `mapsUrl` populated,
+and pins honoured by the scheduler. The fields are all optional until then, so build
+against them now.

@@ -194,6 +194,51 @@ export function applySelection(
   };
 }
 
+export type FoodForecast = {
+  /** What eating costs the whole party for one day. */
+  perDayCents: Cents;
+  /** The same across every day on the ground. */
+  totalCents: Cents;
+  mealsPerDay: number;
+};
+
+const MEALS_PER_DAY = 3;
+
+/**
+ * What this trip will cost to eat.
+ *
+ * The planner puts breakfast, lunch and dinner on every day, so that money is going to
+ * be spent whether or not anybody budgeted for it. Forecasting it up front is what stops
+ * the trip spending its whole budget on attractions and then discovering dinner — which
+ * is exactly how every demo trip ended up over.
+ *
+ * The median researched price is used rather than the mean: one omakase counter should
+ * not drag the estimate up for a trip of noodle bars.
+ */
+export function forecastFood(
+  intake: TripIntake,
+  options: readonly TripOption[],
+): FoodForecast {
+  const prices = options
+    .filter(
+      (option): option is Extract<TripOption, { kind: 'activity' }> =>
+        option.kind === 'activity' && option.category === 'restaurant',
+    )
+    .map((option) => option.costCents)
+    .sort((a, b) => a - b);
+
+  // No research yet: a plain per-person guess, so the reserve is never zero.
+  const median =
+    prices.length === 0
+      ? 2_200 * intake.travelers
+      : prices[Math.floor(prices.length / 2)];
+
+  const perDayCents = median * MEALS_PER_DAY;
+  const days = Math.max(1, tripNights(intake));
+
+  return { perDayCents, totalCents: perDayCents * days, mealsPerDay: MEALS_PER_DAY };
+}
+
 export type SubmitCheck = {
   ok: boolean;
   /** Genuinely stops the trip. Only ever one thing: spending more than you have. */

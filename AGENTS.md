@@ -118,6 +118,16 @@ Shapes you will use constantly:
 multiplied out. `costBasis` exists so the UI can explain the number ("$496 · $124 a night"),
 never so a component recomputes it.
 
+**Travel is not only flying.** `FlightOption` carries a `mode` of `plane`, `train`,
+`bus` or `car`, and a leg's `from`/`to` are place labels rather than strict IATA codes,
+because stations are not airports. The discriminant is still `kind: 'flight'` and the
+bucket key is still `flights` — renaming both touches around thirty call sites across
+two active lanes for no behavioural gain. **This is deliberate debt, recorded rather than
+hidden.** Prefer the `TravelOption` alias in new code, and the bucket's user-facing label
+is "Getting there". A `direction: 'roundtrip'` option carries the way home in
+`returnLegs`, satisfies both directions on its own, and is charged once — on the outward
+block, with the homeward block costing zero.
+
 Cross-field invariants — `stops === legs.length - 1`, `costCents === nightlyCents * nights`,
 `costCents === perDayCents * days` — are enforced by the normalizers in `lib/k2/parse.ts`,
 not by schema refinements, so the option schemas stay plain objects and remain usable inside
@@ -169,6 +179,11 @@ batch → one repair round-trip echoing the validation error back if nothing par
 normalize (de-dupe on lowercased title, clamp prices above 3× the bucket, clamp absurd
 durations, assign prefixed ids).
 
+**Map links are built from a search query, never from coordinates.** `lat`/`lng` come
+back empty on every researched venue, and a coordinate the model invents puts a pin in
+the sea. `mapsUrl` is assembled in the providers from name, neighbourhood and
+destination, which always resolves.
+
 Caching is not optional. Key on `sha256(model + prompt + SCHEMA_VERSION)`. Disk in dev
 (`.k2cache/`, gitignored), in-memory LRU in prod.
 
@@ -212,6 +227,11 @@ themselves. A second implementation is how a running total starts disagreeing wi
   one activity. It returns human-readable reasons; show them, do not paraphrase them.
 - Restaurants bill to the `food` bucket; every other activity bills to `activities`.
 - When money is left over, `suggestFillers` offers the priciest activities that still fit.
+- **Food is forecast, not discovered.** `forecastFood` estimates three meals a day across
+  the days on the ground from the median researched restaurant price. The planner reserves
+  it before filling days out, and the Explore step shows it. Without that reserve the
+  planner spends the whole budget on attractions and then adds meals on top, which is how
+  every demo trip ended up over.
 
 ---
 
@@ -233,6 +253,12 @@ must be right, and it is fully unit-testable.
 8. Anything that cannot be placed goes to `unscheduled` **with a reason the user can act on**
    — "closed Mondays", not "no slot".
 9. `warnings` for a day over its share of the budget, and for connections under 90 minutes.
+10. **Pins come first.** `/api/schedule` accepts `pinned` — a traveler dragged this block
+    to this time — and those are placed before anything else, with the day packed around
+    them. A pin that cannot hold, because the venue is shut then, comes back in
+    `unscheduled` with a reason so the UI can snap it back rather than silently moving it.
+11. The pace the traveler chose beats the eight-hour fullness target. A relaxed day stops
+    at two activities and comes out shorter, and that is correct.
 
 ---
 
@@ -290,18 +316,21 @@ Bad: `feat(api): implement comprehensive K2 Think integration layer 🤖`
 
 ---
 
-## 14. Waves
+## 14. Where the work is
 
-Three waves, two lanes, one human commit between each.
+The original three waves are long done. The lanes now run continuously, in their own
+directories, with the human committing between rounds.
 
-| Wave | Claude (API/logic) | Codex (UI/UX) |
+| Lane | Owns | Currently |
 |---|---|---|
-| 0 | scaffold, `types.ts`, `budget.ts`, fixtures, stub routes, this file | design tokens, `components/ui/*` |
-| 1 | `k2/{client,parse,cache}`, prompts A–C, `providers/*`, research routes, `probe-k2` | `store/trip.ts`, intake form, bucket sliders, `BudgetMeter`, `SelectableCard`/`OptionList` |
-| 2 | `schedule/{hours,pack}`, `/api/schedule`, transit prompt, quota top-up | flights / activities / lodging / transit steps, submit gate |
-| 3 | wire scheduler, warm demo cache, error and timeout handling, `docs/DEMO.md` | itinerary view, print view, skeletons, empty and error states, responsive, a11y |
+| **Claude** | research, pricing, the planner, the routes | ground travel modes, landmark coverage, the food forecast, map URLs, pinned blocks |
+| **Codex** | the wizard, the itinerary, the store, the look | step order, inline budgeting, saved trips, editing in place, drag to reorder, the send-off |
 
----
+A contract change lands **alone and committed** before either lane builds on it. That is
+the one hard sequencing rule; everything else is concurrent.
+
+`npm run rehearse` is the acceptance gate for a round: all three demo trips READY.
+
 
 ## 15. Troubleshooting
 

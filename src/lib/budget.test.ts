@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   allocateBuckets,
+  forecastFood,
   applySelection,
   canSubmit,
   formatCents,
@@ -394,5 +395,48 @@ describe('budgets at the extremes', () => {
     expect(parseDollarsToCents('-5')).toBeNull();
     expect(parseDollarsToCents('1e5')).toBeNull();
     expect(parseDollarsToCents('  ')).toBeNull();
+  });
+});
+
+/**
+ * The planner eats three times a day whether or not anybody budgeted for it. Forecasting
+ * that up front is what stops a trip spending everything on attractions and discovering
+ * dinner afterwards.
+ */
+describe('forecastFood', () => {
+  it('costs three meals a day for every day on the ground', () => {
+    const forecast = forecastFood(intake, catalog);
+    expect(forecast.mealsPerDay).toBe(3);
+    expect(forecast.totalCents).toBe(forecast.perDayCents * tripNights(intake));
+  });
+
+  it('uses the median so one expensive counter does not skew it', () => {
+    const cheap = [4_000, 4_400, 4_800].map((cost, i) =>
+      activity(`act_cheap_${i}`, cost, 'food'),
+    );
+    const withSplurge = [...cheap, activity('act_omakase', 90_000, 'food')];
+
+    const plain = forecastFood(intake, cheap);
+    const skewed = forecastFood(intake, withSplurge);
+
+    expect(skewed.perDayCents).toBeLessThan(plain.perDayCents * 2);
+  });
+
+  it('still forecasts something before any research has come back', () => {
+    const forecast = forecastFood(intake, []);
+    expect(forecast.perDayCents).toBeGreaterThan(0);
+    expect(forecast.totalCents).toBeGreaterThan(0);
+  });
+
+  it('scales with the size of the party when it has nothing else to go on', () => {
+    const pair = forecastFood({ ...intake, travelers: 2 }, []);
+    const group = forecastFood({ ...intake, travelers: 6 }, []);
+    expect(group.perDayCents).toBeGreaterThan(pair.perDayCents);
+  });
+
+  it('costs a longer trip more', () => {
+    const short = forecastFood({ ...intake, endDate: '2026-10-14' }, catalog);
+    const long = forecastFood({ ...intake, endDate: '2026-10-26' }, catalog);
+    expect(long.totalCents).toBeGreaterThan(short.totalCents);
   });
 });

@@ -10,59 +10,58 @@ between each. Wave 0 is done.
 
 ## Where the project is
 
-Both lanes have shipped their waves and a hardening pass each. 339 tests, typecheck,
-lint and build clean. The wizard works end to end on live K2 research, the UI is built
-around the Penny Rats logo, and the sample trip is priced so a live demo has real
-headroom.
+The app plans a whole trip: live K2 research, round-trip fares, a planner that fills
+every day with three meals and eight hours of activity, an editable itinerary contract,
+and a demo rehearsal that gates on all of it. 380 tests, typecheck, lint and build clean.
 
-Coverage by lane: about 310 tests behind the API, the scheduler and the K2 client; 28
-in front of them. The remaining gap is not another unit test on either side — **it is
-that nothing exercises the whole journey at once.** Every bug found by looking at
-rendered output this week (a day mislabelled "travel day", work piling onto the front
-of the trip, check-out overlapping a flight) was invisible to unit tests that passed.
+This round is mostly about the shape of the product. The wizard asks for things in the
+wrong order, front-loads a budget screen nobody wants, misses obvious landmarks, plans
+food without budgeting for it, and offers no way back to yesterday's trip.
 
-### One decision is blocking the UI lane
-
-Codex has asked twice for `jsdom` and `@testing-library/react` as dev dependencies.
-`package.json` is human-owned under AGENTS.md §4, so they correctly stopped rather than
-installing. Without them there can be no DOM-level coverage of error states, empty
-lists or the submit gate. **Approve or decline before starting the round below** — half
-of Codex's work depends on it.
+**Needed from the human:** save the send-off image to `public/enjoy-your-trip.jpg`.
 
 ---
 
-## Codex Plus — what the user actually sees
+## Codex Plus — the shape of the product
 
 ```
 You are the UI/UX lane on PennyRat. Read AGENTS.md and
-docs/requests/claude-to-codex.md first. Your C1-C4 hardening landed: the client tests
-went from 5 to 28 and the request-state extraction is good work.
+docs/requests/claude-to-codex.md first.
 
-This round is about the rendered result, not the fetch layer.
+This round is about the shape of the product, not its correctness. The planner already
+fills every day with meals and activities, marks what it suggested, and hands you
+alternatives and couldAdd for editing. Almost none of that is visible yet.
 
-1. C5, if the human has approved jsdom and @testing-library/react. If they have not,
-   skip to 2 and do not install anything. Cover the states nobody looks at: research
-   failed, zero options returned, every option priced beyond the remaining budget, and
-   SubmitGate showing its blocked reasons verbatim from canSubmit. Query by accessible
-   role and name rather than test ids — it costs nothing and audits the markup as a
-   side effect.
+1. Swap Explore and Stay. The order becomes Plan, Getting there, Stay, Explore, Around,
+   Schedule. Somewhere to sleep outranks sightseeing.
 
-2. An accessibility pass over the wizard. It has aria labels and a focus region
-   already, so this is verification rather than a rewrite: every control reachable and
-   operable by keyboard, the step change announced, the budget meter readable by a
-   screen reader rather than colour alone, focus visible against the new cream and
-   periwinkle palette, and the over-budget state conveyed by more than a red bar.
+2. Kill the budget allocation screen. No per-category sliders before anybody has seen a
+   price. Each step shows what is left and lets money move into that category in place,
+   while looking at the options it buys. The six buckets still exist underneath.
 
-3. The itinerary at its edges, with real data rather than the sample. Check a day whose
-   only block is kind "free", a day genuinely in the air, an unscheduled list holding a
-   flight id, and a plan with fifteen-plus outings. The reason strings are written for
-   a traveler — render them verbatim.
+3. The home screen becomes a list of saved trips. Trips save as they are planned and
+   appear with destination, dates and total; open, rename, delete. localStorage, wrapping
+   the state the store already persists. The logo stays the way back to it.
 
-4. The print view. globals.css has an @media print block nobody has exercised. A
-   printed itinerary should be the plan, not the chrome.
+4. Editing at the end must not send anyone back through the wizard. block.alternatives
+   and day.couldAdd are already populated — build the swap and add controls onto the
+   itinerary itself.
 
-5. Responsive: the wizard at 375px. The budget sidebar and the six-step stepper are
-   the two things most likely to be unusable on a phone.
+5. Drag to reorder. Post the new position as `pinned` on /api/schedule and re-render. A
+   pin the scheduler rejects comes back in `unscheduled` with a reason: snap it back and
+   show that reason rather than inventing copy.
+
+6. A map link on every activity and lodging card and on itinerary blocks, from the
+   `mapsUrl` the providers now supply. Do not build it from lat/lng — those are empty.
+
+7. The send-off: an "enjoy your trip" reveal on the finished itinerary using
+   public/enjoy-your-trip.jpg, fading or sliding in. Honour prefers-reduced-motion.
+
+8. Round trips are in the data and invisible in the UI. One card covering both
+   directions, with the saving against two one-ways shown.
+
+The API lane is adding ground travel (train, bus, driving) to the same step, so build
+"Getting there" around a `mode` field rather than assuming a plane.
 
 Your lane: src/components/**, src/app/** except api/, src/lib/store/**, globals.css.
 Never run git. End with the HANDOFF block from AGENTS.md §12.
@@ -70,39 +69,50 @@ Never run git. End with the HANDOFF block from AGENTS.md §12.
 
 ---
 
-## Claude Code — the journey, end to end
+## Claude Code — research, pricing, the planner
 
 ```
 You are the API/logic lane on PennyRat. Read AGENTS.md and
 docs/requests/codex-to-claude.md first.
 
-Your side is well covered in pieces — 311 tests across the K2 client, the providers,
-the routes, the budget and the scheduler. What no test does is run the whole thing in
-order. Every bug found by reading rendered output this week passed the unit tests.
+The contract changes for this round land first, alone, and get committed before Codex
+builds on them: travel modes, mapsUrl, pinned blocks, and forecastFood. File the summary
+in docs/requests/claude-to-codex.md the moment they are green.
 
-1. A full-journey test. One file, no DOM, no network: build an intake, call all four
-   research route handlers directly, make a realistic selection the way a person would
-   (cheapest flights, a mid-tier bed, things to do until the money runs low), post it
-   to the schedule handler, and assert the result is a trip somebody could actually
-   take — within budget, every required category present, nothing scheduled while in
-   the air, nothing on a day a venue is shut, and the day totals summing to the trip
-   total. Then vary it: one night, twelve travelers, a relaxed pace, a destination with
-   no cached research. This is the test that would have caught the front-loading.
+1. Getting there, not just flights. FlightOption gains
+   mode: 'plane' | 'train' | 'bus' | 'car', and leg from/to loosen from strict IATA to a
+   place label, because stations are not airports. Keep the discriminant as
+   kind: 'flight' — renaming touches thirty sites for no behavioural gain — but export
+   TravelOption as the name people should use and relabel the bucket "Getting there".
+   Prompt B asks for trains, coaches and driving on short-haul pairs, priced the way each
+   is really sold: a rail fare, a coach ticket, fuel plus tolls plus parking. The
+   round-trip branch already handles both directions.
 
-2. npm run rehearse. A script that runs the three demo trips against the live API end
-   to end and prints a per-trip verdict: research source and latency for each endpoint,
-   whether a realistic basket stays in budget, how many outings got scheduled, and
-   anything unscheduled. Exit non-zero if a trip would embarrass you on stage. This is
-   the thing to run the morning of the demo, and it belongs next to warm-cache.mts.
+2. The landmarks problem. A Washington DC trip came back with no monuments. Prompt A
+   needs an explicit floor on the places a first-time visitor would be disappointed to
+   miss, named as such, before anything clever. DC must return the Lincoln Memorial and
+   the Mall. Raise the attraction quota alongside the existing 10-restaurant floor.
 
-3. Confirm the two contract changes are honoured downstream now that Codex has
-   rendered them: a day whose only block is kind "free", and a flight id appearing in
-   itinerary.unscheduled. Assert both from the API side so a future change cannot
-   silently regress them.
+3. Food has to be in the budget. Add forecastFood(intake, options) to lib/budget.ts —
+   median researched restaurant price times three meals times days on the ground —
+   reserve it during auto-fill, and expose it so the Explore step can say "about $420 on
+   food across five days". This is the fix for the $150-$300 overage rehearse reports on
+   every trip right now.
 
-4. Handle anything new in docs/requests/codex-to-claude.md.
+4. mapsUrl on activities and lodging, built in the providers from name, neighbourhood
+   and destination as a maps search query. Never from lat/lng: they are empty on all 28
+   fixture activities because the model does not fill them, and a hallucinated
+   coordinate drops a pin in the sea.
 
-Your lane: src/lib/{k2,providers,schedule}/**, src/app/api/**, scripts/**, fixtures
-with care. Do not touch src/components/** or src/lib/store/**. Never run git. End with
-the HANDOFF block from AGENTS.md §12.
+5. Pinned blocks in schedule/pack.ts. /api/schedule takes
+   pinned?: {id, date, startMinutes}[]. Place pins first, pack around them, and return
+   any that cannot hold in `unscheduled` with a reason the UI can show.
+
+6. Tests and rehearsal: ground travel priced and placed, a pin honoured and an
+   impossible pin rejected, the food forecast matching what the planner actually spends,
+   and npm run rehearse asserting the overage is gone.
+
+Your lane: src/lib/{k2,providers,schedule}/**, src/app/api/**, scripts/**, fixtures with
+care. Do not touch src/components/** or src/lib/store/**. Never run git. End with the
+HANDOFF block from AGENTS.md §12.
 ```

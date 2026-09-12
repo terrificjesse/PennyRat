@@ -16,7 +16,6 @@ const localDateTime = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, 'expected yyyy-mm-ddTHH:mm local time, no timezone');
 const clockTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:mm');
-const iata = z.string().regex(/^[A-Z]{3}$/, 'expected a 3-letter uppercase IATA code');
 
 export const interestSchema = z.enum([
   'food',
@@ -51,7 +50,7 @@ export type BucketKey = z.infer<typeof bucketKeySchema>;
 export const BUCKET_KEYS = bucketKeySchema.options;
 
 export const BUCKET_LABELS: Record<BucketKey, string> = {
-  flights: 'Flights',
+  flights: 'Getting there',
   lodging: 'Lodging',
   activities: 'Activities',
   food: 'Food',
@@ -112,9 +111,12 @@ const selectableBase = z.object({
   confidence: confidenceSchema,
 });
 
+/** An airport code, a station name, or wherever else a journey starts. */
+const placeLabel = z.string().min(2).max(40);
+
 export const flightLegSchema = z.object({
-  from: iata,
-  to: iata,
+  from: placeLabel,
+  to: placeLabel,
   departLocal: localDateTime,
   arriveLocal: localDateTime,
   carrier: z.string().min(2).max(40),
@@ -132,6 +134,12 @@ export const flightOptionSchema = selectableBase.extend({
    * so this is the shape most travelers actually buy.
    */
   direction: z.enum(['outbound', 'return', 'roundtrip']),
+  /**
+   * How the journey is made; absent means `plane`. Everything here is a `flight` by
+   * discriminant because renaming that costs thirty call sites and buys nothing —
+   * see AGENTS.md §6. Read it through `travelMode()` rather than testing for undefined.
+   */
+  mode: z.enum(['plane', 'train', 'bus', 'car']).optional(),
   /** The outward journey. For a one-way `return` option, this *is* the way home. */
   legs: z.array(flightLegSchema).min(1).max(4),
   /** Set only when `direction` is `roundtrip`. */
@@ -142,6 +150,21 @@ export const flightOptionSchema = selectableBase.extend({
   baggageIncluded: z.boolean(),
 });
 export type FlightOption = z.infer<typeof flightOptionSchema>;
+/** The name to prefer in new code: not everything that gets you there flies. */
+export type TravelOption = FlightOption;
+export type TravelMode = NonNullable<FlightOption['mode']>;
+
+/** How a journey is made, defaulting to the one everything used to assume. */
+export function travelMode(option: Pick<FlightOption, 'mode'>): TravelMode {
+  return option.mode ?? 'plane';
+}
+
+export const TRAVEL_MODE_LABELS: Record<TravelMode, string> = {
+  plane: 'Flight',
+  train: 'Train',
+  bus: 'Coach',
+  car: 'Driving',
+};
 
 export const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 export type DayKey = (typeof DAY_KEYS)[number];
@@ -190,6 +213,8 @@ export const activityOptionSchema = selectableBase.extend({
   interests: z.array(interestSchema).min(1),
   sensoryNotes: z.string().max(200).optional(),
   bestTimeOfDay: z.enum(['morning', 'afternoon', 'evening', 'any']),
+  /** A maps search link, built from the name and neighbourhood — never from coordinates. */
+  mapsUrl: z.string().max(400).optional(),
 });
 export type ActivityOption = z.infer<typeof activityOptionSchema>;
 
@@ -205,6 +230,7 @@ export const lodgingOptionSchema = selectableBase.extend({
   rating: z.number().min(0).max(5).optional(),
   amenities: z.array(z.string().max(40)).max(12).default([]),
   walkabilityNote: z.string().max(160).optional(),
+  mapsUrl: z.string().max(400).optional(),
 });
 export type LodgingOption = z.infer<typeof lodgingOptionSchema>;
 
@@ -344,6 +370,20 @@ export const scheduleRequestSchema = z.object({
   selectedIds: z.array(z.string()),
   /** Never suggest these — the traveler removed them and meant it. */
   excludedIds: z.array(z.string()).optional(),
+  /**
+   * Dragged into place by the traveler. These are laid down before anything else and
+   * the day is packed around them; one that cannot hold comes back in `unscheduled`.
+   */
+  pinned: z
+    .array(
+      z.object({
+        id: z.string(),
+        date: isoDate,
+        startMinutes: z.number().int().min(0).max(24 * 60 - 1),
+      }),
+    )
+    .max(60)
+    .optional(),
 });
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
 
