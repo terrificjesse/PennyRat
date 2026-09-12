@@ -115,6 +115,73 @@ export function extractJson(text: string): unknown {
 }
 
 /**
+ * Every balanced `{...}` in the text that is not nested inside another one, whether
+ * or not the array around them was ever closed.
+ *
+ * This is the salvage path. A reply cut off by the token limit has no closing `]`,
+ * so nothing parses as a whole; the same is true of a reply that drops a comma
+ * between two entries. Reading the objects individually turns "lost all twelve"
+ * into "lost the one that was broken".
+ */
+function objectSpans(text: string): Span[] {
+  const spans: Span[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === '{') {
+      if (depth === 0) start = i;
+      depth += 1;
+    } else if (ch === '}') {
+      if (depth === 0) continue;
+      depth -= 1;
+      if (depth === 0 && start >= 0) {
+        spans.push({ start, end: i + 1 });
+        start = -1;
+      }
+    }
+  }
+
+  return spans;
+}
+
+/** Individually parseable objects from a reply whose overall structure is broken. */
+export function salvageObjects(text: string): unknown[] {
+  const cleaned = stripReasoning(text);
+  const salvaged: unknown[] = [];
+
+  for (const span of objectSpans(cleaned)) {
+    const candidate = cleaned.slice(span.start, span.end);
+    for (const attempt of [candidate, stripTrailingCommas(candidate)]) {
+      try {
+        const value = JSON.parse(attempt);
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          salvaged.push(value);
+          break;
+        }
+      } catch {
+        // This one is the casualty; the rest of the reply is still worth having.
+      }
+    }
+  }
+
+  return salvaged;
+}
+
+/**
  * Pulls the list out of whatever wrapper the model chose: a bare array, or an
  * object with one array property whatever it happens to be called.
  */
@@ -148,18 +215,28 @@ export type ItemsResult<T> = {
  * sixteenth invented a field would be the wrong trade.
  */
 export function parseModelItems<T>(raw: string, itemSchema: z.ZodType<T>): ItemsResult<T> {
-  const value = extractJson(raw);
-  if (value === null) {
-    return { items: [], warnings: [], fatal: 'no JSON found in the response' };
-  }
+  const warnings: string[] = [];
 
-  const list = asArray(value);
+  const value = extractJson(raw);
+  let list = value === null ? null : asArray(value);
+
+  // Nothing parsed as a whole. Before giving up, read out the objects that are
+  // individually intact — a truncated or mis-punctuated array still carries most of
+  // its entries.
   if (!list) {
-    return { items: [], warnings: [], fatal: 'response JSON contained no array' };
+    const salvaged = salvageObjects(raw);
+    if (salvaged.length === 0) {
+      return {
+        items: [],
+        warnings,
+        fatal: value === null ? 'no JSON found in the response' : 'response JSON contained no array',
+      };
+    }
+    list = salvaged;
+    warnings.push(`recovered ${salvaged.length} entries from a malformed or truncated reply`);
   }
 
   const items: T[] = [];
-  const warnings: string[] = [];
 
   list.forEach((entry, index) => {
     const parsed = itemSchema.safeParse(entry);

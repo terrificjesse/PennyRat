@@ -246,7 +246,7 @@ describe('the live research path, end to end', () => {
     expect(options[1].costCents).toBe(2200 * intake.travelers);
   });
 
-  it('sends the key as a bearer token and the evaluated sampling settings', async () => {
+  it('sends the key as a bearer token and the settings measured against the endpoint', async () => {
     useStub();
     const before = seenBodies.length;
     await researchActivities(freshIntake(), budget);
@@ -257,7 +257,8 @@ describe('the live research path, end to end', () => {
     expect(body.model).toBe('IFM/K2-Think-V2');
     expect(body.temperature).toBe(1);
     expect(body.top_p).toBe(1);
-    expect(body.reasoning_effort).toBe('high');
+    expect(body.reasoning_effort).toBe('medium');
+    expect(body.max_tokens).toBe(16_384);
     expect(body.response_format).toBeUndefined();
   });
 

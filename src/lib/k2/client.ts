@@ -14,7 +14,21 @@ export type K2Mode = 'live' | 'cache' | 'fixture';
 
 const TIMEOUT_MS = 120_000;
 const MAX_ATTEMPTS = 3;
-const DEFAULT_MAX_TOKENS = 8192;
+/**
+ * Measured against the real endpoint: listing 12 hotels costs ~5.3k completion
+ * tokens at reasoning_effort high and ~1.6k at medium. 16k leaves room for the
+ * long tail without inviting a runaway trace.
+ */
+const DEFAULT_MAX_TOKENS = 16_384;
+
+/**
+ * These prompts ask the model to recall and list, not to solve anything, so the
+ * evaluated `high` setting buys nothing here — it spent 4,547 reasoning tokens on a
+ * hotel list that `medium` produced correctly with 841, and at 8k it overran the
+ * budget and returned an empty message. `low` is cheaper still but drops commas and
+ * nests objects it should not, so `medium` is the setting that holds.
+ */
+const DEFAULT_REASONING_EFFORT = 'medium';
 const REPAIR_RAW_LIMIT = 4000;
 
 export function k2Mode(): K2Mode {
@@ -28,7 +42,7 @@ export function k2Config(): Config {
   return {
     apiKey: (process.env.IFM_API_KEY ?? '').trim(),
     baseUrl: (process.env.IFM_BASE_URL ?? '').trim().replace(/\/+$/, ''),
-    model: (process.env.IFM_MODEL ?? 'IFM/K2-Think-V2').trim(),
+    model: (process.env.IFM_MODEL ?? 'MBZUAI-IFM/K2-Think-v2').trim(),
   };
 }
 
@@ -51,33 +65,57 @@ type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
 type ChatReply = {
   text: string;
+  truncated: boolean;
   promptTokens?: number;
   completionTokens?: number;
+  reasoningTokens?: number;
 };
 
-function readUsage(payload: unknown): Pick<ChatReply, 'promptTokens' | 'completionTokens'> {
+function readUsage(
+  payload: unknown,
+): Pick<ChatReply, 'promptTokens' | 'completionTokens' | 'reasoningTokens'> {
   if (!payload || typeof payload !== 'object') return {};
   const usage = (payload as { usage?: Record<string, unknown> }).usage;
   if (!usage) return {};
-  const prompt = usage.prompt_tokens;
-  const completion = usage.completion_tokens;
+
+  const details = usage.completion_tokens_details as { reasoning_tokens?: unknown } | undefined;
+  const numeric = (value: unknown) => (typeof value === 'number' ? value : undefined);
+
   return {
-    promptTokens: typeof prompt === 'number' ? prompt : undefined,
-    completionTokens: typeof completion === 'number' ? completion : undefined,
+    promptTokens: numeric(usage.prompt_tokens),
+    completionTokens: numeric(usage.completion_tokens),
+    reasoningTokens: numeric(details?.reasoning_tokens),
   };
 }
 
-function readContent(payload: unknown): string {
+function readChoice(payload: unknown): { content: string; truncated: boolean } {
   const choices = (payload as { choices?: unknown })?.choices;
   if (!Array.isArray(choices) || choices.length === 0) {
     throw new K2Error('response contained no choices');
   }
-  const message = (choices[0] as { message?: { content?: unknown } }).message;
-  const content = message?.content;
+
+  const choice = choices[0] as {
+    finish_reason?: unknown;
+    message?: { content?: unknown; reasoning?: unknown };
+  };
+  const truncated = choice.finish_reason === 'length';
+  const content = choice.message?.content;
+
   if (typeof content !== 'string' || content.trim().length === 0) {
-    throw new K2Error('response contained no message content');
+    // The endpoint returns the trace in `message.reasoning`, separate from the
+    // answer. An empty answer beside a long trace means reasoning consumed the whole
+    // token budget before the model started writing.
+    const reasoning = choice.message?.reasoning;
+    const spentOnReasoning = typeof reasoning === 'string' && reasoning.length > 0;
+    throw new K2Error(
+      spentOnReasoning
+        ? 'the model spent its whole token budget reasoning and returned no answer'
+        : 'response contained no message content',
+      spentOnReasoning,
+    );
   }
-  return content;
+
+  return { content, truncated };
 }
 
 /** True for the 400 a gateway returns when it does not recognize reasoning_effort. */
@@ -89,6 +127,7 @@ async function postChat(
   messages: ChatMessage[],
   maxTokens: number,
   sendReasoningEffort: boolean,
+  effort: string,
 ): Promise<ChatReply> {
   const { apiKey, baseUrl, model } = k2Config();
 
@@ -102,7 +141,7 @@ async function postChat(
     top_p: 1.0,
     max_tokens: maxTokens,
   };
-  if (sendReasoningEffort) body.reasoning_effort = 'high';
+  if (sendReasoningEffort) body.reasoning_effort = effort;
 
   let response: Response;
   try {
@@ -130,7 +169,8 @@ async function postChat(
   }
 
   const payload: unknown = await response.json().catch(() => null);
-  return { text: readContent(payload), ...readUsage(payload) };
+  const { content, truncated } = readChoice(payload);
+  return { text: content, truncated, ...readUsage(payload) };
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -139,14 +179,26 @@ async function chat(
   messages: ChatMessage[],
   maxTokens: number,
   warnings: string[],
+  effort: string,
 ): Promise<ChatReply> {
   let sendReasoningEffort = true;
+  let budget = maxTokens;
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
-      return await postChat(messages, maxTokens, sendReasoningEffort);
+      const reply = await postChat(messages, budget, sendReasoningEffort, effort);
+      if (reply.truncated) {
+        warnings.push(`reply hit the ${budget} token ceiling and was cut off`);
+      }
+      return reply;
     } catch (error) {
+      // Ran out of tokens before answering: the fix is room, not a retry in place.
+      if (error instanceof K2Error && error.retryable && /reasoning/.test(error.message)) {
+        budget = Math.min(budget * 2, 65_536);
+        warnings.push(`no answer within the token budget; retrying with ${budget}`);
+        continue;
+      }
       lastError = error;
 
       if (error instanceof K2Error && error.message === 'endpoint rejected reasoning_effort') {
@@ -184,6 +236,8 @@ export type ResearchArgs<T> = {
   prompt: string;
   itemSchema: z.ZodType<T>;
   maxTokens?: number;
+  /** Override only for a prompt that genuinely reasons rather than recalls. */
+  reasoningEffort?: string;
 };
 
 export type ResearchResult<T> = { items: T[]; meta: ResearchMeta };
@@ -208,7 +262,14 @@ function repairTurns(raw: string, problem: string): ChatMessage[] {
  * fall back to fixtures rather than surfacing an error.
  */
 export async function researchItems<T>(args: ResearchArgs<T>): Promise<ResearchResult<T>> {
-  const { label, system, prompt, itemSchema, maxTokens = DEFAULT_MAX_TOKENS } = args;
+  const {
+    label,
+    system,
+    prompt,
+    itemSchema,
+    maxTokens = DEFAULT_MAX_TOKENS,
+    reasoningEffort = DEFAULT_REASONING_EFFORT,
+  } = args;
   const { model } = k2Config();
   const mode = k2Mode();
   const started = Date.now();
@@ -244,17 +305,21 @@ export async function researchItems<T>(args: ResearchArgs<T>): Promise<ResearchR
     { role: 'user', content: prompt },
   ];
 
-  const first = await chat(messages, maxTokens, warnings);
+  const first = await chat(messages, maxTokens, warnings, reasoningEffort);
   await writeCache(key, first.text);
 
   let parsed: ItemsResult<T> = parseModelItems(first.text, itemSchema);
 
   if (parsed.fatal) {
     warnings.push(`first reply unusable (${parsed.fatal}); asked the model to repair it`);
+    // A repair costs a whole extra round-trip, so keep what triggered it. Nearly
+    // always this is a prompt problem worth fixing rather than model noise.
+    await writeFailure(`${label}-needed-repair`, first.text);
     const repaired = await chat(
       [...messages, ...repairTurns(first.text, parsed.fatal)],
       maxTokens,
       warnings,
+      reasoningEffort,
     );
     parsed = parseModelItems(repaired.text, itemSchema);
     if (!parsed.fatal) await writeCache(key, repaired.text);
@@ -267,9 +332,10 @@ export async function researchItems<T>(args: ResearchArgs<T>): Promise<ResearchR
 
   const latencyMs = Date.now() - started;
   const tokens = first.completionTokens ?? 0;
+  const thinking = first.reasoningTokens ?? 0;
   console.info(
     `[k2] ${label} ${parsed.items.length} items in ${latencyMs}ms` +
-      (tokens ? ` (${tokens} completion tokens)` : ''),
+      (tokens ? ` (${tokens} completion tokens, ${thinking} reasoning)` : ''),
   );
 
   return {

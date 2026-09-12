@@ -191,3 +191,40 @@ describe('clampInt', () => {
     expect(clampInt(Number.POSITIVE_INFINITY, 7, 10)).toBe(7);
   });
 });
+
+/**
+ * Both of these are real failures seen against the live endpoint: a reply cut off by
+ * the token ceiling, and a reply where the model emitted a nested object instead of a
+ * property and dropped the comma before it.
+ */
+describe('salvaging a broken reply', () => {
+  it('recovers the complete entries from an array the token limit cut off', () => {
+    const truncated =
+      '[{"name":"first","cost":10},{"name":"second","cost":20},{"name":"thir';
+    const result = parseModelItems(truncated, itemSchema);
+
+    expect(result.fatal).toBeUndefined();
+    expect(result.items.map((item) => item.name)).toEqual(['first', 'second']);
+    expect(result.warnings[0]).toContain('recovered 2 entries');
+  });
+
+  it('loses only the mis-punctuated entry, not the whole list', () => {
+    const malformed =
+      '[{"name":"good one","cost":10},' +
+      '{"name":"broken","cost":20 {"extra":"nested"}},' +
+      '{"name":"also good","cost":30}]';
+    const result = parseModelItems(malformed, itemSchema);
+
+    expect(result.items.map((item) => item.name)).toEqual(['good one', 'also good']);
+  });
+
+  it('still reports a fatal when there is genuinely nothing to salvage', () => {
+    expect(parseModelItems('[{"name":', itemSchema).fatal).toBeTruthy();
+  });
+
+  it('does not salvage objects out of a reasoning trace', () => {
+    const raw = '<think>maybe {"name":"idea","cost":1}</think>[{"name":"real","cost":2}]';
+    const result = parseModelItems(raw, itemSchema);
+    expect(result.items.map((item) => item.name)).toEqual(['real']);
+  });
+});
